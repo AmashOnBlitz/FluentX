@@ -1,0 +1,7 @@
+#pragma once
+
+#define NAMESPACE_FLUENTX FluentX
+#define NAMESPACE_USING_FLUENTX namespace NAMESPACE_FLUENTX
+
+#define FLUENTX_DEBUG					1
+#define FLUENTX_ENABLE_RUNTIME_ERRORS	1
