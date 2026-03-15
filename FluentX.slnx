@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="FluentX/FluentX.vcxproj" />
+  <Project Path="FluentX/FluentX.vcxproj" Id="e7a395ba-5670-49f1-a66f-8a286c8a1408" />
 </Solution>

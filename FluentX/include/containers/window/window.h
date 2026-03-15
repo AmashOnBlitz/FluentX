@@ -1,8 +1,11 @@
 #pragma once
 #include "WindowContext.h"
+#include <string>
 #include "core/config.h"
 
 namespace NAMESPACE_FLUENTX {
+
+	typedef void (*OnWindowClose)(std::string windowName);
 
 	class Window {
 	public:
@@ -12,9 +15,23 @@ namespace NAMESPACE_FLUENTX {
 		WindowContext& getWndContext();
 		bool setWndContext(WindowContext& wndCont);
 
-	private:
-		WindowContext* wndContext = nullptr;
+		bool showWindow();
+		bool hideWindow();
+
+		void onClose(OnWindowClose func);
+
+		std::string fetchLastErr();
+
+	protected:
+		void setLastErr(std::string _e);
+
+	private: //VARS
+		WindowContext* mWndContext = nullptr;
+		std::string errStr = "";
+
+	protected:
+		OnWindowClose mOnClose = nullptr;
 	};
 
-	inline LRESULT CALLBACK fnMainWinProcNavigator(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	LRESULT CALLBACK fnMainWinProcNavigator(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 }

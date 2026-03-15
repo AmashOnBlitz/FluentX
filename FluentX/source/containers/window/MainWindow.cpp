@@ -1,6 +1,7 @@
 #include "containers/window/MainWindow.h"
 #include "core/WindowsConstants.h"
 #include "core/macroFuncs.h"
+#include "core/utility.h"
 #include "Windows.h"
 #include "tchar.h"
 
@@ -23,7 +24,8 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int
 	wndClassEx.cbSize = sizeof(wndClassEx);
 	wndClassEx.cbClsExtra = 0;
 	wndClassEx.cbWndExtra = 0;
-	wndClassEx.hbrBackground = NULL;
+	//wndClassEx.hbrBackground = NULL;
+	wndClassEx.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
 	wndClassEx.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndClassEx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wndClassEx.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
@@ -36,9 +38,12 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int
 	if (!RegisterClassEx(&this->getWndContext().wndClassEx)) {
 		DWORD errorCode = GetLastError();
 		std::string err = "Cannot Create Window Class Of Name \"" +
-			std::string(mWindowName.begin(), mWindowName.end()) +
-			"\"!\nError Code: " + std::to_string(errorCode);
+			WStringToString(mWindowName) +
+			"\"!\nError Code: " + std::to_string(errorCode) +
+			" In Window Class Registration";
+		this->setLastErr(err);
 		FLUENTX_THROW_ERROR(err);
+		return false;
 	}
 	HWND hWnd = CreateWindowEx(
 		0,
@@ -54,16 +59,17 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int
 		WindowsConstants::getHinstance(),
 		this
 		);
-}
-
-std::string& NAMESPACE_FLUENTX::MainWindow::fetchLastErr()
-{
-	return this->errStr;
-}
-
-void NAMESPACE_FLUENTX::MainWindow::onClose(OnMainWindowClose func)
-{
-	mOnClose = func;
+	if (hWnd == INVALID_HANDLE_VALUE || hWnd == NULL) {
+		DWORD errorCode = GetLastError();
+		std::string err = "Cannot Create Window  Of Name \"" +
+			WStringToString(mWindowName) +
+			"\"!\nError Code: " + std::to_string(errorCode) + " In Create Window";
+		this->setLastErr(err);
+		FLUENTX_THROW_ERROR(err);
+		return false;
+	}
+	this->getWndContext().hWnd = hWnd;
+	return true;
 }
 
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -71,9 +77,8 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 	switch (msg)
 	{
 	case WM_DESTROY: 
-	{
-		this->mOnClose(std::string(mWindowName.begin(), mWindowName.end()));
-	}
+		this->mOnClose(WStringToString(mWindowName));
+		break;
 	default:
 		break;
 	}

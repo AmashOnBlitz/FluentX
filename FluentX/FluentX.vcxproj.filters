@@ -27,6 +27,12 @@
     <ClCompile Include="source\core\WindowsConstants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\core\utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\core\App.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\config.h">
@@ -45,6 +51,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\core\WindowsConstants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

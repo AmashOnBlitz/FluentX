@@ -126,11 +126,13 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\core\App.cpp" />
+    <ClCompile Include="source\core\utility.cpp" />
     <ClCompile Include="source\core\WindowsConstants.cpp" />
     <ClCompile Include="source\containers\window\MainWindow.cpp" />
     <ClCompile Include="source\containers\window\window.cpp" />
@@ -140,8 +142,10 @@
     <ClInclude Include="include\containers\window\MainWindow.h" />
     <ClInclude Include="include\containers\window\WindowContext.h" />
     <ClInclude Include="include\containers\window\window.h" />
+    <ClInclude Include="include\core\App.h" />
     <ClInclude Include="include\core\config.h" />
     <ClInclude Include="include\core\macroFuncs.h" />
+    <ClInclude Include="include\core\utility.h" />
     <ClInclude Include="include\core\WindowsConstants.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
