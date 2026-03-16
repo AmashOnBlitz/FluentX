@@ -20,6 +20,8 @@ namespace NAMESPACE_FLUENTX {
 			MainWindowStyle style = MainWindowStylePresets::DefaultWindow
 		);
 
+		void setParent(MainWindow& parent);
+
 		LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 	private: //Vars

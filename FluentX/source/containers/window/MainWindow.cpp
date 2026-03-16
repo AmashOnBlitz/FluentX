@@ -82,6 +82,16 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 	return true;
 }
 
+void NAMESPACE_FLUENTX::MainWindow::setParent(MainWindow& parent)
+{
+	this->getWndContext().hParent = parent.getWndContext().hWnd;
+	::SetParent(this->getWndContext().hWnd, this->getWndContext().hParent);
+	//LONG style = GetWindowLong(this->getWndContext().hWnd, GWL_STYLE);
+	//style = (style & ~WS_POPUP) | WS_CHILD;
+	//SetWindowLong(this->getWndContext().hWnd, GWL_STYLE, style);
+}
+
+
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)

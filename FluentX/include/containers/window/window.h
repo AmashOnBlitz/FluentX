@@ -1,13 +1,14 @@
 #pragma once
 #include "WindowContext.h"
 #include <string>
+#include <functional>
 #include "core/config.h"
 #include "MainWindowStyle.h"
 #include <dwmapi.h>
 
 namespace NAMESPACE_FLUENTX {
 
-	typedef void (*OnWindowClose)(std::string windowName);
+	typedef std::function<void(std::string)> OnWindowClose;
 
 	class Window {
 	public:
@@ -21,7 +22,6 @@ namespace NAMESPACE_FLUENTX {
 		bool hideWindow();
 
 		void onClose(OnWindowClose func);
-
 		std::string fetchLastErr();
 
 
