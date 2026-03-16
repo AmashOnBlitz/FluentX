@@ -43,13 +43,18 @@ void NAMESPACE_FLUENTX::MenuBar::RemoveMenu(const std::string& name)
     this->FlagRebuild();
 }
 
-void NAMESPACE_FLUENTX::MenuBar::FlagRebuild()
+void NAMESPACE_FLUENTX::MenuBar::FlagRebuild(bool rebuild)
 {
-    rebuildMenu = true;
+    rebuildMenu = rebuild;
 }
 
 bool NAMESPACE_FLUENTX::MenuBar::GetRebuild()
 {
     return rebuildMenu;
+}
+
+std::vector<NAMESPACE_FLUENTX::Menu>& NAMESPACE_FLUENTX::MenuBar::GetVectMenus()
+{
+    return mVectMenus;
 }
 

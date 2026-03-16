@@ -31,6 +31,8 @@ namespace NAMESPACE_FLUENTX {
         void SetFPS(int fps);
         int GetFPS();
 
+        void CheckMenuRebuilds();
+
     private:
         App() = default;
         ~App() = default;

@@ -2,7 +2,7 @@
 #include "containers/Menu/Menu.h"
 #include "containers/Menu/MenuBar.h"
 
-NAMESPACE_FLUENTX::Menu::Menu(std::string& label, bool enabled)
+NAMESPACE_FLUENTX::Menu::Menu(const std::string& label, bool enabled)
 {
     this->SetLabel(label);
     this->SetEnabled(enabled);
@@ -62,9 +62,14 @@ void NAMESPACE_FLUENTX::Menu::SetEnabled(bool Enabled)
     this->FlagParentRebuild();
 }
 
-bool NAMESPACE_FLUENTX::Menu::GetEnabled()
+bool NAMESPACE_FLUENTX::Menu::IsEnabled()
 {
     return mEnabled;
+}
+
+std::vector<NAMESPACE_FLUENTX::MenuItem>& NAMESPACE_FLUENTX::Menu::GetVectMenuItems()
+{
+    return mVectMenuItems;
 }
 
 // USED INTERNALLY ---------------------------------

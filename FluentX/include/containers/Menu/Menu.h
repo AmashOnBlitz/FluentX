@@ -9,7 +9,7 @@ namespace NAMESPACE_FLUENTX {
 	class Menu {
 	public:
 
-		Menu(std::string& label, bool enabled);
+		Menu(const std::string& label, bool enabled);
 		~Menu();
 		void SetLabel(std::string label);
 		std::string GetLabel();
@@ -19,7 +19,9 @@ namespace NAMESPACE_FLUENTX {
 		void RemoveMenuItem(std::string name);
 
 		void SetEnabled(bool Enabled);
-		bool GetEnabled();
+		bool IsEnabled();
+
+		std::vector<MenuItem>& GetVectMenuItems();
 
 		// Used Internally ---------
 		void SetParent(MenuBar* bar);

@@ -1,5 +1,6 @@
 #include "core/pch.h"
 #include "containers/window/MainWindow.h"
+#include "core/CustomWindowMessages.h"
 #include "core/WindowsConstants.h"
 #include "core/macroFuncs.h"
 #include "core/utility.h"
@@ -105,13 +106,91 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static HMENU hMenu = nullptr;
+	static std::vector<MenuItem*> AllVectMenuItems;
+
 	switch (msg)
 	{
-	case WM_DESTROY: 
+	case WM_CREATE:
+	case WM_FLUENTX_REBUILD_MENU:
+	{
+		AllVectMenuItems.clear();
+		hMenu = CreateMenu();
+		int iMenuID = 1800; // 1800 - 2000 RESERVED for MENU COMMAND IDs
+
+		for (auto& menu : mMenuBar.GetVectMenus())
+		{
+			HMENU hMenuPopup = CreateMenu();
+			auto& currentVMItems = menu.GetVectMenuItems();
+
+			for (auto& item : currentVMItems)
+			{
+				DWORD flags = MF_STRING;
+				if (item.IsChecked()) flags |= MF_CHECKED;
+				if (!item.IsEnabled()) flags |= MF_GRAYED;
+				AppendMenu(hMenuPopup, flags, iMenuID, StringToWString(item.GetLabel()).c_str());
+				AllVectMenuItems.push_back(&item);
+				iMenuID++;
+			}
+			DWORD flags = MF_POPUP;
+			if (!menu.IsEnabled()) flags |= MF_GRAYED;
+			AppendMenu(hMenu, flags, (UINT_PTR)hMenuPopup, StringToWString(menu.GetLabel()).c_str());
+		}
+
+		SetMenu(hwnd, hMenu);
+		DrawMenuBar(hwnd);
+		break;
+	}
+
+	case WM_COMMAND:
+	{
+		int menuID = LOWORD(wParam);
+		int index = menuID - 1800;
+		if (index >= 0 && index < (int)AllVectMenuItems.size())
+		{
+			MenuItem* clickedItem = AllVectMenuItems[index];
+			if (clickedItem && clickedItem->IsEnabled())
+			{
+				auto callback = clickedItem->GetOnClick();
+				if (callback) callback(clickedItem);
+			}
+		}
+		break;
+	}
+
+	case WM_DESTROY:
 		this->mOnClose(WStringToString(mWindowName));
 		break;
+
 	default:
 		break;
 	}
+
 	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+
+void NAMESPACE_FLUENTX::MainWindow::SetMenuBar(MenuBar mBar)
+{
+	this->mMenuBar = std::move(mBar);
+	this->mMenuBarSet = true;
+}
+
+void NAMESPACE_FLUENTX::MainWindow::UseMenuBar(bool use)
+{
+	this->mUseMenuBar = use;
+}
+
+bool NAMESPACE_FLUENTX::MainWindow::IsUsingMenuBar()
+{
+	return this->mUseMenuBar;
+}
+
+NAMESPACE_FLUENTX::MenuBar& NAMESPACE_FLUENTX::MainWindow::getMenuBar()
+{
+	if (!mMenuBarSet) {
+		std::string err = "GetMenuBar failed!\nMenu Bar Was Never Set For Window : " + WStringToString(mWindowName);
+		FLUENTX_THROW_ERROR(err);
+	}
+	return mMenuBar;
 }

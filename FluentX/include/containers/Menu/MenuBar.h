@@ -12,9 +12,10 @@ namespace NAMESPACE_FLUENTX {
 		void InsertMenuAt(const Menu& menu, int pos);
 		void RemoveMenu(const std::string& name);
 
-		void FlagRebuild();
+		void FlagRebuild(bool rebuild = true);
 		bool GetRebuild();
 
+		std::vector<Menu>& GetVectMenus();
 	private:
 		std::vector<Menu> mVectMenus;
 		bool rebuildMenu = false;

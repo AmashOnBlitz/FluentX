@@ -5,21 +5,22 @@
 namespace NAMESPACE_FLUENTX {
 
 	class Menu;
-	typedef std::function<void(std::string)> OnMenuItemClick;
+	class MenuItem;
+	typedef std::function<void(MenuItem* mItem)> OnMenuItemClick;
 	class MenuItem {
 	public:
 
-		MenuItem(std::string& label, OnMenuItemClick onClick, bool enabled = true, bool checked = true);
+		MenuItem(const std::string& label, OnMenuItemClick onClick, bool enabled = true, bool checked = false);
 		~MenuItem();
 
 		void SetLabel(std::string label);
 		std::string GetLabel();
 
 		void SetEnabled(bool enabled);
-		bool GetEnabled();
+		bool IsEnabled();
 
 		void SetChecked(bool checked);
-		bool GetChecked();
+		bool IsChecked();
 
 		void OnClick(OnMenuItemClick onClick);
 		OnMenuItemClick GetOnClick();

@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include "Windows.h"
 #include <iostream>
+#include <core/CustomWindowMessages.h>
 
 NAMESPACE_FLUENTX::App& NAMESPACE_FLUENTX::App::Instance()
 {
@@ -64,7 +65,7 @@ int NAMESPACE_FLUENTX::App::Run()
 				std::lock_guard<std::mutex> lock(mUpdateMutex);
 				updFunc = mOnUpdate;
 			}
-
+			CheckMenuRebuilds();
 			if (updFunc)
 				updFunc();
 
@@ -136,5 +137,28 @@ void NAMESPACE_FLUENTX::App::SetFPS(int fps)
 int NAMESPACE_FLUENTX::App::GetFPS()
 {
 	return mFps;
+}
+
+void NAMESPACE_FLUENTX::App::CheckMenuRebuilds()
+{
+	for (auto& win : mRegisteredWindows)
+	{
+		if (!win || !win->IsUsingMenuBar()) continue;
+
+		MenuBar& bar = win->getMenuBar();
+		if (bar.GetRebuild())
+		{
+			::SendMessage(win->getWndContext().hWnd, WM_FLUENTX_REBUILD_MENU, 0, 0);
+			bar.FlagRebuild(false); 
+		}
+	}
+	if (mMainWindow && mMainWindow->IsUsingMenuBar()) {
+		MenuBar& bar = mMainWindow->getMenuBar();
+		if (bar.GetRebuild())
+		{
+			::SendMessage(mMainWindow->getWndContext().hWnd, WM_FLUENTX_REBUILD_MENU, 0, 0);
+			bar.FlagRebuild(false);
+		}
+	}
 }
 

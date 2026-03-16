@@ -3,7 +3,7 @@
 #include "containers/Menu/Menu.h"
 #include "containers/Menu/MenuBar.h"
 
-NAMESPACE_FLUENTX::MenuItem::MenuItem(std::string& label, OnMenuItemClick onClick, bool enabled, bool checked)
+NAMESPACE_FLUENTX::MenuItem::MenuItem(const std::string& label, OnMenuItemClick onClick, bool enabled, bool checked)
 {
 	this->SetLabel(label);
 	this->OnClick(onClick);
@@ -33,7 +33,7 @@ void NAMESPACE_FLUENTX::MenuItem::SetEnabled(bool enabled)
 	this->FlagParentRebuild();
 }
 
-bool NAMESPACE_FLUENTX::MenuItem::GetEnabled()
+bool NAMESPACE_FLUENTX::MenuItem::IsEnabled()
 {
 	return this->mEnabled;
 }
@@ -44,7 +44,7 @@ void NAMESPACE_FLUENTX::MenuItem::SetChecked(bool checked)
 	this->FlagParentRebuild();
 }
 
-bool NAMESPACE_FLUENTX::MenuItem::GetChecked()
+bool NAMESPACE_FLUENTX::MenuItem::IsChecked()
 {
 	return this->mChecked;
 }
