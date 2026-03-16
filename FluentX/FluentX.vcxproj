@@ -81,7 +81,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+      <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -96,7 +97,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+      <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -107,11 +109,14 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>core/pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-    <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+      <AdditionalDependencies>dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -124,6 +129,8 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>core/pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,14 +139,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\containers\Menu\MenuItem.cpp" />
+    <ClCompile Include="source\containers\Menu\Menu.cpp" />
+    <ClCompile Include="source\containers\Menu\MenuBar.cpp" />
     <ClCompile Include="source\core\App.cpp" />
+    <ClCompile Include="source\core\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="source\core\utility.cpp" />
     <ClCompile Include="source\core\WindowsConstants.cpp" />
     <ClCompile Include="source\containers\window\MainWindow.cpp" />
     <ClCompile Include="source\containers\window\window.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="main.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\containers\Menu\Menu.h" />
+    <ClInclude Include="include\containers\Menu\MenuBar.h" />
+    <ClInclude Include="include\containers\Menu\MenuItem.h" />
     <ClInclude Include="include\containers\window\MainWindow.h" />
     <ClInclude Include="include\containers\window\MainWindowStyle.h" />
     <ClInclude Include="include\containers\window\WindowContext.h" />
@@ -147,6 +167,7 @@
     <ClInclude Include="include\core\App.h" />
     <ClInclude Include="include\core\config.h" />
     <ClInclude Include="include\core\macroFuncs.h" />
+    <ClInclude Include="include\core\pch.h" />
     <ClInclude Include="include\core\utility.h" />
     <ClInclude Include="include\core\WindowsConstants.h" />
   </ItemGroup>

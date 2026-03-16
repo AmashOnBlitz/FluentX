@@ -1,3 +1,4 @@
+#include "core/pch.h"
 #include "core/utility.h"
 
 std::string WStringToString(const std::wstring& wstr)

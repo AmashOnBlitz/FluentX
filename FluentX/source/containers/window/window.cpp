@@ -1,3 +1,4 @@
+#include "core/pch.h"
 #include "containers/window/window.h"
 #include "core/macroFuncs.h"
 #include <containers/window/MainWindow.h>

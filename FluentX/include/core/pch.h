@@ -1,0 +1,12 @@
+#pragma once
+#include <iostream>
+#include <Windows.h>
+#include <dwmapi.h>
+#include <tchar.h>
+#include <strsafe.h>
+#include <string>
+#include <vector>
+#include <atomic>
+#include <mutex>
+#include <cstdint>
+#include <functional>

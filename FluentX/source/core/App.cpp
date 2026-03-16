@@ -1,3 +1,4 @@
+#include "core/pch.h"
 #include "core/App.h"
 #include "core/macroFuncs.h"
 #include <cstdlib>

@@ -13,8 +13,8 @@ namespace NAMESPACE_FLUENTX {
 
 		bool Init(
 			std::string windowName,
+			int width,
 			int height,
-			int weight,
 			int xPos,
 			int yPos,
 			MainWindowStyle style = MainWindowStylePresets::DefaultWindow,

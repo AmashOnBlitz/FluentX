@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 
 	fx::App::Instance().OnUpdate([&]() {
 		window->SetBounds(
-			window->GetPosX() + 0.1,
+			window->GetPosX() + 1,
 			window->GetPosY() + 1,
 			window->GetWidth() + 1,
 			window->GetHeight() + 1
