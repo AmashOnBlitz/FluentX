@@ -15,8 +15,16 @@ NAMESPACE_FLUENTX::MainWindow::~MainWindow()
 	if (mOnClose) mOnClose = nullptr;
 }
 
-bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int weight, int xPos, int yPos)
+bool NAMESPACE_FLUENTX::MainWindow::Init(
+	std::string windowName,
+	int height,
+	int weight,
+	int xPos,
+	int yPos,
+	MainWindowStyle style
+)
 {
+	this->mStyle = style;
 	static int windowGenCount = 0;
 	mWindowName = std::wstring(windowName.begin(), windowName.end()); 
 	mClassName = L"Class_MAINWINDOW_" + mWindowName + std::to_wstring(++windowGenCount);
@@ -46,10 +54,10 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int
 		return false;
 	}
 	HWND hWnd = CreateWindowEx(
-		0,
+		ConvToWin32WndExStyle_Creation(style.creation),
 		mClassName.c_str(),
 		mWindowName.c_str(),
-		WS_OVERLAPPEDWINDOW,
+		ConvToWin32WndStyle_Creation(style.creation),
 		xPos,
 		yPos,
 		weight,
@@ -68,6 +76,8 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(std::string windowName, int height, int
 		FLUENTX_THROW_ERROR(err);
 		return false;
 	}
+	this->ApplyUIFlags(hWnd, mStyle.ui);
+	ApplyBehaviorFlags(hWnd, mStyle.behavior);
 	this->getWndContext().hWnd = hWnd;
 	return true;
 }

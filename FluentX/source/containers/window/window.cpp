@@ -1,6 +1,7 @@
 #include "containers/window/window.h"
 #include "core/macroFuncs.h"
 #include <containers/window/MainWindow.h>
+#include <dwmapi.h>
 
 NAMESPACE_FLUENTX::Window::Window()
 {
@@ -32,7 +33,7 @@ bool NAMESPACE_FLUENTX::Window::showWindow()
 {
 	if (mWndContext) {
 		if (mWndContext->hWnd != INVALID_HANDLE_VALUE && mWndContext->hWnd != NULL) {
-			::ShowWindow(mWndContext->hWnd, SW_NORMAL);
+			::ShowWindow(mWndContext->hWnd, ConvToWin32WndStyle_Startup(mStyle.startup));
 			::UpdateWindow(mWndContext->hWnd);
 			return true;
 		}
@@ -89,4 +90,112 @@ LRESULT NAMESPACE_FLUENTX::fnMainWinProcNavigator(HWND hwnd, UINT msg, WPARAM wP
 		return MainWnd->fnWndProc(hwnd, msg, wParam, lParam);
 	}
 	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+DWORD NAMESPACE_FLUENTX::Window::ConvToWin32WndStyle_Creation(MainWindowCreationFlags style)
+{
+	DWORD flags = 0;
+
+	if ((style & MainWindowCreationFlags::TitleBar) != MainWindowCreationFlags::None)
+		flags |= WS_CAPTION;
+
+	if ((style & MainWindowCreationFlags::Border) != MainWindowCreationFlags::None)
+		flags |= WS_BORDER;
+
+	if ((style & MainWindowCreationFlags::Resizable) != MainWindowCreationFlags::None)
+		flags |= WS_THICKFRAME;
+
+	if ((style & MainWindowCreationFlags::MinimizeButton) != MainWindowCreationFlags::None)
+		flags |= WS_MINIMIZEBOX;
+
+	if ((style & MainWindowCreationFlags::MaximizeButton) != MainWindowCreationFlags::None)
+		flags |= WS_MAXIMIZEBOX;
+
+	if ((style & MainWindowCreationFlags::SystemMenu) != MainWindowCreationFlags::None)
+		flags |= WS_SYSMENU;
+
+	if ((style & MainWindowCreationFlags::Popup) != MainWindowCreationFlags::None)
+		flags |= WS_POPUP;
+
+	if ((style & MainWindowCreationFlags::Dialog) != MainWindowCreationFlags::None)
+		flags |= WS_DLGFRAME;
+
+	return flags;
+}
+
+DWORD NAMESPACE_FLUENTX::Window::ConvToWin32WndExStyle_Creation(MainWindowCreationFlags style)
+{
+	DWORD flags = 0;
+
+	if ((style & MainWindowCreationFlags::TopMost) != MainWindowCreationFlags::None)
+		flags |= WS_EX_TOPMOST;
+
+	if ((style & MainWindowCreationFlags::ToolWindow) != MainWindowCreationFlags::None)
+		flags |= WS_EX_TOOLWINDOW;
+
+	if ((style & MainWindowCreationFlags::AppWindow) != MainWindowCreationFlags::None)
+		flags |= WS_EX_APPWINDOW;
+
+	if ((style & MainWindowCreationFlags::AcceptFiles) != MainWindowCreationFlags::None)
+		flags |= WS_EX_ACCEPTFILES;
+
+	return flags;
+}
+
+
+int NAMESPACE_FLUENTX::Window::ConvToWin32WndStyle_Startup(MainWindowStartupState state)
+{
+	switch (state)
+	{
+	case MainWindowStartupState::Normal:         return SW_SHOWNORMAL;
+	case MainWindowStartupState::Minimized:      return SW_SHOWMINIMIZED;
+	case MainWindowStartupState::Maximized:      return SW_SHOWMAXIMIZED;
+	case MainWindowStartupState::Hidden:         return SW_HIDE;
+	case MainWindowStartupState::Restore:        return SW_RESTORE;
+	case MainWindowStartupState::Show:           return SW_SHOW;
+	case MainWindowStartupState::ShowNoActivate: return SW_SHOWNOACTIVATE;
+	case MainWindowStartupState::ShowDefault:    return SW_SHOWDEFAULT;
+	default:                                     return SW_SHOWNORMAL;
+	}
+}
+
+void NAMESPACE_FLUENTX::Window::ApplyUIFlags(HWND hwnd, MainWindowUIFlags flags)
+{
+	if ((flags & MainWindowUIFlags::Layered) != MainWindowUIFlags::None)
+	{
+		LONG_PTR ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex | WS_EX_LAYERED);
+	}
+
+	if ((flags & MainWindowUIFlags::DropShadow) != MainWindowUIFlags::None)
+	{
+		LONG_PTR ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex | WS_EX_DLGMODALFRAME);
+	}
+
+	if ((flags & MainWindowUIFlags::RoundedCorners) != MainWindowUIFlags::None)
+	{
+		DWM_WINDOW_CORNER_PREFERENCE pref = DWMWCP_ROUND;
+		DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &pref, sizeof(pref));
+	}
+}
+
+void NAMESPACE_FLUENTX::Window::ApplyBehaviorFlags(HWND hwnd, MainWindowBehaviorFlags flags)
+{
+	if ((flags & MainWindowBehaviorFlags::ClickThrough) != MainWindowBehaviorFlags::None)
+	{
+		LONG ex = GetWindowLong(hwnd, GWL_EXSTYLE);
+		SetWindowLong(hwnd, GWL_EXSTYLE, ex | WS_EX_TRANSPARENT);
+	}
+
+	if ((flags & MainWindowBehaviorFlags::Transparent) != MainWindowBehaviorFlags::None)
+	{
+		SetLayeredWindowAttributes(hwnd, 0, 200, LWA_ALPHA);
+	}
+
+	if ((flags & MainWindowBehaviorFlags::NoActivate) != MainWindowBehaviorFlags::None)
+	{
+		LONG ex = GetWindowLong(hwnd, GWL_EXSTYLE);
+		SetWindowLong(hwnd, GWL_EXSTYLE, ex | WS_EX_NOACTIVATE);
+	}
 }

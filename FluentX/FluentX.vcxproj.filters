@@ -59,5 +59,8 @@
     <ClInclude Include="include\core\App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\containers\window\MainWindowStyle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
