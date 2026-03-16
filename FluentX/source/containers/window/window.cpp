@@ -70,6 +70,81 @@ std::string NAMESPACE_FLUENTX::Window::fetchLastErr()
 	return err;
 }
 
+void NAMESPACE_FLUENTX::Window::SetPos(int x, int y)
+{
+	SetWindowPos(
+		this->getWndContext().hWnd,
+		NULL,
+		x,
+		y,
+		0,
+		0,
+		SWP_NOSIZE | SWP_NOZORDER
+	);
+}
+
+void NAMESPACE_FLUENTX::Window::SetDimensions(int width, int height)
+{
+	SetWindowPos(
+		this->getWndContext().hWnd,
+		NULL,
+		0,
+		0,
+		width,
+		height,
+		SWP_NOMOVE | SWP_NOZORDER
+	);
+}
+
+void NAMESPACE_FLUENTX::Window::SetBounds(int x, int y, int width, int height)
+{
+	SetWindowPos(
+		this->getWndContext().hWnd,
+		NULL,
+		x,
+		y,
+		width,
+		height,
+		SWP_NOZORDER
+	);
+}
+
+int NAMESPACE_FLUENTX::Window::GetPosX()
+{
+	GetWindowRect(
+		this->getWndContext().hWnd,
+		&mRect
+	);
+	return mRect.left;
+}
+
+int NAMESPACE_FLUENTX::Window::GetPosY()
+{
+	GetWindowRect(
+		this->getWndContext().hWnd,
+		&mRect
+	);
+	return mRect.top;
+}
+
+int NAMESPACE_FLUENTX::Window::GetWidth()
+{
+	GetWindowRect(
+		this->getWndContext().hWnd,
+		&mRect
+	);
+	return (mRect.right - mRect.left);
+}
+
+int NAMESPACE_FLUENTX::Window::GetHeight()
+{
+	GetWindowRect(
+		this->getWndContext().hWnd,
+		&mRect
+	);
+	return (mRect.bottom - mRect.top);
+}
+
 void NAMESPACE_FLUENTX::Window::setLastErr(std::string _e)
 {
 	this->errStr = _e;

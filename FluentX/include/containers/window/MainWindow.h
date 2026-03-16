@@ -17,10 +17,9 @@ namespace NAMESPACE_FLUENTX {
 			int weight,
 			int xPos,
 			int yPos,
-			MainWindowStyle style = MainWindowStylePresets::DefaultWindow
+			MainWindowStyle style = MainWindowStylePresets::DefaultWindow,
+			MainWindow* parent = nullptr
 		);
-
-		void setParent(MainWindow& parent);
 
 		LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

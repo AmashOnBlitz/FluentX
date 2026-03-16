@@ -41,6 +41,57 @@ int NAMESPACE_FLUENTX::App::Run()
 		FLUENTX_THROW_ERROR("Cannot Run App!\nIssue: Main Window Not Set");
 		return EXIT_FAILURE;
 	}
+	mRunning = true;
+
+	OnUpdateFunc updFunc;
+	std::chrono::steady_clock::time_point start;
+	std::chrono::steady_clock::time_point end;
+
+	std::atomic<int> mRealFPS = 0;
+
+	mUpdateThread = std::thread([this,&mRealFPS]() {
+
+		OnUpdateFunc updFunc;
+		int frameCounter = 0;
+		auto lastFPSUpdate = std::chrono::steady_clock::now();
+
+		while (mRunning)
+		{
+			auto frameStart = std::chrono::steady_clock::now();
+
+			{
+				std::lock_guard<std::mutex> lock(mUpdateMutex);
+				updFunc = mOnUpdate;
+			}
+
+			if (updFunc)
+				updFunc();
+
+			frameCounter++;
+
+			auto now = std::chrono::steady_clock::now();
+
+			if (std::chrono::duration_cast<std::chrono::seconds>(now - lastFPSUpdate).count() >= 1)
+			{
+				mRealFPS = frameCounter;
+				frameCounter = 0;
+				lastFPSUpdate = now;
+			}
+
+			auto frameEnd = std::chrono::steady_clock::now();
+			auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
+			int targetFrameTime = 1000 / mFps.load();
+
+			if (frameTime.count() < targetFrameTime)
+			{
+				std::this_thread::sleep_for(
+					std::chrono::milliseconds(targetFrameTime - frameTime.count())
+				);
+			}
+		}
+	});
+
+
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);
@@ -51,7 +102,10 @@ int NAMESPACE_FLUENTX::App::Run()
 
 void NAMESPACE_FLUENTX::App::Shutdown()
 {
-	for (auto win : mRegisteredWindows) {
+	mRunning = false;
+	if (mUpdateThread.joinable()) mUpdateThread.join();
+
+	for (auto& win : mRegisteredWindows) {
 		if (win) {
 			win->hideWindow();
 			std::cout << "Win Hidden (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
@@ -62,3 +116,24 @@ void NAMESPACE_FLUENTX::App::Shutdown()
 	if (mMainWindow) mMainWindow->hideWindow();
 	PostQuitMessage(0);
 }
+
+NAMESPACE_FLUENTX::OnUpdateFunc NAMESPACE_FLUENTX::App::getOnUpdate()
+{
+	return mOnUpdate;
+}
+
+void NAMESPACE_FLUENTX::App::OnUpdate(OnUpdateFunc func)
+{
+	mOnUpdate = func;
+}
+
+void NAMESPACE_FLUENTX::App::SetFPS(int fps)
+{
+	mFps = fps;
+}
+
+int NAMESPACE_FLUENTX::App::GetFPS()
+{
+	return mFps;
+}
+

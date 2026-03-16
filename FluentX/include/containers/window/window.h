@@ -24,6 +24,14 @@ namespace NAMESPACE_FLUENTX {
 		void onClose(OnWindowClose func);
 		std::string fetchLastErr();
 
+		void SetPos(int x, int y);
+		void SetDimensions(int width, int height);
+		void SetBounds(int x, int y, int width, int height);
+
+		int GetPosX();
+		int GetPosY();
+		int GetWidth();
+		int GetHeight();
 
 	protected:
 		void setLastErr(std::string _e);
@@ -36,10 +44,11 @@ namespace NAMESPACE_FLUENTX {
 	private: //VARS
 		WindowContext* mWndContext = nullptr;
 		std::string errStr = "";
+		RECT mRect{};
 
 	protected:
 		OnWindowClose mOnClose = nullptr;
-		MainWindowStyle mStyle;
+		MainWindowStyle mStyle{};
 	};
 
 	LRESULT CALLBACK fnMainWinProcNavigator(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

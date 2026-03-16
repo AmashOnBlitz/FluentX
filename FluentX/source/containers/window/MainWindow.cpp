@@ -17,11 +17,12 @@ NAMESPACE_FLUENTX::MainWindow::~MainWindow()
 
 bool NAMESPACE_FLUENTX::MainWindow::Init(
 	std::string windowName,
+	int width,
 	int height,
-	int weight,
 	int xPos,
 	int yPos,
-	MainWindowStyle style
+	MainWindowStyle style,
+	MainWindow* parent
 )
 {
 	this->mStyle = style;
@@ -33,7 +34,7 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 	wndClassEx.cbClsExtra = 0;
 	wndClassEx.cbWndExtra = 0;
 	//wndClassEx.hbrBackground = NULL;
-	wndClassEx.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
+	wndClassEx.hbrBackground = (HBRUSH)GetStockObject((parent)? BLACK_BRUSH : GRAY_BRUSH);
 	wndClassEx.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndClassEx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wndClassEx.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
@@ -53,16 +54,24 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 		FLUENTX_THROW_ERROR(err);
 		return false;
 	}
+	HWND parentHwnd = parent ? parent->getWndContext().hWnd : NULL;
+	DWORD dwStyle = ConvToWin32WndStyle_Creation(style.creation);
+	if (parent)
+	{
+		dwStyle &= ~(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME);
+		dwStyle |= WS_CHILD | WS_VISIBLE;
+	}
+
 	HWND hWnd = CreateWindowEx(
 		ConvToWin32WndExStyle_Creation(style.creation),
 		mClassName.c_str(),
 		mWindowName.c_str(),
-		ConvToWin32WndStyle_Creation(style.creation),
+		dwStyle,
 		xPos,
 		yPos,
-		weight,
+		width,
 		height,
-		NULL,
+		parentHwnd,
 		NULL,
 		WindowsConstants::getHinstance(),
 		this
@@ -82,14 +91,15 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 	return true;
 }
 
-void NAMESPACE_FLUENTX::MainWindow::setParent(MainWindow& parent)
-{
-	this->getWndContext().hParent = parent.getWndContext().hWnd;
-	::SetParent(this->getWndContext().hWnd, this->getWndContext().hParent);
-	//LONG style = GetWindowLong(this->getWndContext().hWnd, GWL_STYLE);
-	//style = (style & ~WS_POPUP) | WS_CHILD;
-	//SetWindowLong(this->getWndContext().hWnd, GWL_STYLE, style);
-}
+//
+//void NAMESPACE_FLUENTX::MainWindow::setParent(MainWindow& parent)
+//{
+//	this->getWndContext().hParent = parent.getWndContext().hWnd;
+//	::SetParent(this->getWndContext().hWnd, this->getWndContext().hParent);
+//	LONG style = GetWindowLong(this->getWndContext().hWnd, GWL_STYLE);
+//	style = (style & ~WS_POPUP) | WS_CHILD;
+//	SetWindowLong(this->getWndContext().hWnd, GWL_STYLE, style);
+//}
 
 
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
