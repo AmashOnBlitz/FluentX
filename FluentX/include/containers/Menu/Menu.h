@@ -14,17 +14,19 @@ namespace NAMESPACE_FLUENTX {
 		void SetLabel(std::string label);
 		std::string GetLabel();
 
-		void AddMenuItem(MenuItem& mItem);
-		void InsertMenuItemAt(MenuItem& mItem, int pos);
-		void RemoveMenuItem(std::string name);
+		void AddMenuItem(MenuItem* mItem);
+		void AddMenuItemWithSub(MenuItem* item, Menu* subMenu);
+		void AddSeprator();
+		void InsertMenuItemAt(MenuItem* mItem, int pos);
+		void RemoveMenuItem(const std::string& name);
 
 		void SetEnabled(bool Enabled);
 		bool IsEnabled();
 
-		std::vector<MenuItem>& GetVectMenuItems();
+		std::vector<MenuItem*>& GetVectMenuItems();
 
 		// Used Internally ---------
-		void SetParent(MenuBar* bar);
+		void _SetParent(MenuBar* bar);
 		// USED INTERNALLY -------
 		void _ReceiveRebuildFlag();
 
@@ -32,7 +34,7 @@ namespace NAMESPACE_FLUENTX {
 		void FlagParentRebuild();
 
 	private: // Vars
-		std::vector<MenuItem> mVectMenuItems;
+		std::vector<MenuItem*> mVectMenuItems;
 		bool mEnabled = true;
 		std::string mLabel = "";
 		MenuBar* parentBar = nullptr;

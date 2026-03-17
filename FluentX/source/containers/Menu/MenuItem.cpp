@@ -40,6 +40,7 @@ bool NAMESPACE_FLUENTX::MenuItem::IsEnabled()
 
 void NAMESPACE_FLUENTX::MenuItem::SetChecked(bool checked)
 {
+	//std::cout << "Menu Item : " << this->mLabel << " Checked : " << this->mChecked << "\n";
 	this->mChecked = checked;
 	this->FlagParentRebuild();
 }
@@ -61,14 +62,36 @@ NAMESPACE_FLUENTX::OnMenuItemClick NAMESPACE_FLUENTX::MenuItem::GetOnClick()
 }
 
 // USED INTERNALLY -----------------------------------
-void NAMESPACE_FLUENTX::MenuItem::SetParent(Menu* menu)
+void NAMESPACE_FLUENTX::MenuItem::_SetParent(Menu* menu)
 {
 	this->mParentMenu = menu;
+}
+
+void NAMESPACE_FLUENTX::MenuItem::_SetSubMenu(Menu* menu)
+{
+	this->mSubMenu = menu;
+}
+
+NAMESPACE_FLUENTX::Menu* NAMESPACE_FLUENTX::MenuItem::_GetSubMenu()
+{
+	if (this->mSubMenu) return mSubMenu;
+	return nullptr;
+}
+
+void NAMESPACE_FLUENTX::MenuItem::_SetIsSubMenu(bool _isSubMenu)
+{
+	this->isSubMenu = _isSubMenu;
+}
+
+bool NAMESPACE_FLUENTX::MenuItem::_GetIsSubMenu()
+{
+	return this->isSubMenu;
 }
 
 void NAMESPACE_FLUENTX::MenuItem::FlagParentRebuild()
 {
 	if (mParentMenu) {
+		//std::cout << "Flagging Parent Rebuild!\n";
 		mParentMenu->_ReceiveRebuildFlag();
 	}
 }

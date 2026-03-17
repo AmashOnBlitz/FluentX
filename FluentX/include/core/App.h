@@ -22,6 +22,7 @@ namespace NAMESPACE_FLUENTX {
         void RegisterWindow(MainWindow* wnd);
         void UnregisterWindow(MainWindow* wnd);
 
+        void Init();
         int Run();
         void Shutdown();
 
@@ -37,6 +38,7 @@ namespace NAMESPACE_FLUENTX {
         App() = default;
         ~App() = default;
     private:
+        bool isInit = false;
         std::thread mUpdateThread;
         std::atomic<bool> mRunning = false;
         std::atomic<int> mFps = 20;

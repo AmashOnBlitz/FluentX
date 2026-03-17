@@ -24,17 +24,19 @@ namespace NAMESPACE_FLUENTX {
 
 		LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-		void SetMenuBar(MenuBar mBar);
+		void SetMenuBar(MenuBar* mBar);
 		void UseMenuBar(bool use);
 		bool IsUsingMenuBar();
-		MenuBar& getMenuBar();
-
+		MenuBar* getMenuBar();
+	private: //Funcs
+		HMENU BuildMenu(Menu* menu, int& iMenuID);
 	private: //Vars
 		bool mMenuBarSet = false;
 		bool mUseMenuBar = true;
-		MenuBar mMenuBar;
+		MenuBar* mMenuBar = nullptr;
 		std::wstring mWindowName = L"";
-		std::wstring mClassName = L"";
+		std::wstring mClassName = L""; 
+		std::vector<MenuItem*> AllVectMenuItems;
 	};
 
 }

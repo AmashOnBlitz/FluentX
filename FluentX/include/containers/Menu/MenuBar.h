@@ -8,16 +8,16 @@ namespace NAMESPACE_FLUENTX {
 	public:
 		MenuBar();
 		~MenuBar();
-		void AddMenu(Menu& menu);
-		void InsertMenuAt(const Menu& menu, int pos);
+		void AddMenu(Menu* menu);
+		void InsertMenuAt(Menu* menu, int pos);
 		void RemoveMenu(const std::string& name);
 
 		void FlagRebuild(bool rebuild = true);
 		bool GetRebuild();
 
-		std::vector<Menu>& GetVectMenus();
+		std::vector<Menu*>& GetVectMenus();
 	private:
-		std::vector<Menu> mVectMenus;
+		std::vector<Menu*> mVectMenus;
 		bool rebuildMenu = false;
 	};
 }

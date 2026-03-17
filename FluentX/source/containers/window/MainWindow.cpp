@@ -104,37 +104,28 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 //}
 
 
+
+
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static HMENU hMenu = nullptr;
-	static std::vector<MenuItem*> AllVectMenuItems;
 
 	switch (msg)
 	{
 	case WM_CREATE:
 	case WM_FLUENTX_REBUILD_MENU:
 	{
+		if (!mMenuBar) return 1;
+		//std::cout << "(Re)Creating Menu\n";
 		AllVectMenuItems.clear();
 		hMenu = CreateMenu();
 		int iMenuID = 1800; // 1800 - 2000 RESERVED for MENU COMMAND IDs
 
-		for (auto& menu : mMenuBar.GetVectMenus())
-		{
-			HMENU hMenuPopup = CreateMenu();
-			auto& currentVMItems = menu.GetVectMenuItems();
-
-			for (auto& item : currentVMItems)
-			{
-				DWORD flags = MF_STRING;
-				if (item.IsChecked()) flags |= MF_CHECKED;
-				if (!item.IsEnabled()) flags |= MF_GRAYED;
-				AppendMenu(hMenuPopup, flags, iMenuID, StringToWString(item.GetLabel()).c_str());
-				AllVectMenuItems.push_back(&item);
-				iMenuID++;
-			}
+		for (auto& menu : mMenuBar->GetVectMenus()) {
+			HMENU hMenuPopup = BuildMenu(menu, iMenuID);
 			DWORD flags = MF_POPUP;
-			if (!menu.IsEnabled()) flags |= MF_GRAYED;
-			AppendMenu(hMenu, flags, (UINT_PTR)hMenuPopup, StringToWString(menu.GetLabel()).c_str());
+			if (!menu->IsEnabled()) flags |= MF_GRAYED;
+			AppendMenu(hMenu, flags, (UINT_PTR)hMenuPopup, StringToWString(menu->GetLabel()).c_str());
 		}
 
 		SetMenu(hwnd, hMenu);
@@ -170,9 +161,9 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 }
 
 
-void NAMESPACE_FLUENTX::MainWindow::SetMenuBar(MenuBar mBar)
+void NAMESPACE_FLUENTX::MainWindow::SetMenuBar(MenuBar* mBar)
 {
-	this->mMenuBar = std::move(mBar);
+	this->mMenuBar = mBar;
 	this->mMenuBarSet = true;
 }
 
@@ -186,11 +177,37 @@ bool NAMESPACE_FLUENTX::MainWindow::IsUsingMenuBar()
 	return this->mUseMenuBar;
 }
 
-NAMESPACE_FLUENTX::MenuBar& NAMESPACE_FLUENTX::MainWindow::getMenuBar()
+NAMESPACE_FLUENTX::MenuBar* NAMESPACE_FLUENTX::MainWindow::getMenuBar()
 {
 	if (!mMenuBarSet) {
 		std::string err = "GetMenuBar failed!\nMenu Bar Was Never Set For Window : " + WStringToString(mWindowName);
 		FLUENTX_THROW_ERROR(err);
 	}
 	return mMenuBar;
+}
+
+HMENU NAMESPACE_FLUENTX::MainWindow::BuildMenu(Menu* menu, int& iMenuID)
+{
+	HMENU hMenuPopup = CreateMenu();
+
+	for (auto& item : menu->GetVectMenuItems()) {
+		if (item->GetLabel() == FLUENTX_STR_MENU_SEP) {
+			AppendMenu(hMenuPopup, MF_SEPARATOR, 0, NULL);
+		}
+		else if (item->_GetIsSubMenu()) {
+			//std::cout << "Got Sub Menu\n";
+			HMENU hSubMenu = BuildMenu(item->_GetSubMenu(), iMenuID);
+			AppendMenu(hMenuPopup, MF_POPUP, (UINT_PTR)hSubMenu, StringToWString(item->GetLabel()).c_str());
+		}
+		else {
+			DWORD flags = MF_STRING;
+			if (item->IsChecked()) flags |= MF_CHECKED;
+			if (!item->IsEnabled()) flags |= MF_GRAYED;
+			AppendMenu(hMenuPopup, flags, iMenuID, StringToWString(item->GetLabel()).c_str());
+			AllVectMenuItems.push_back(item);
+			iMenuID++;
+		}
+	}
+
+	return hMenuPopup;
 }

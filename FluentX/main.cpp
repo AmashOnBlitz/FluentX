@@ -7,31 +7,59 @@
 namespace fx = FluentX;
 
 int main(int argc, char* argv[]) {
+	fx::App::Instance().Init();
 
 	fx::MainWindow* window = new fx::MainWindow();
-	window->Init("First Window", 800, 600, 50, 50, fx::MainWindowStylePresets::DefaultWindow);
+	window->Init("First Window", 1600, 800, 50, 50, fx::MainWindowStylePresets::DefaultWindow);
 	window->onClose([&window](std::string){
 		fx::App::Instance().Shutdown();
 	});
 
-	fx::MenuBar MenuBar;
-	fx::Menu Menu("Menu Item 1", true);
+	fx::MenuBar* menuBar = new fx::MenuBar();
 
-	fx::MenuItem itm1("Item 1", [](fx::MenuItem* mItm) {
-		std::cout << "Menu Item Clicked : " << mItm->GetLabel() << "\n";
-		mItm->SetChecked(!mItm->IsChecked());
+	fx::Menu* menu1 = new fx::Menu("File", true);
+	fx::MenuItem* newItem = new fx::MenuItem("New", [](fx::MenuItem* mItm) {
+		std::cout << "Clicked: " << mItm->GetLabel() << "\n";
 	});
-	fx::MenuItem itm2("Item 2", [](fx::MenuItem* mItm) {
-		std::cout << "Menu Item Clicked : " << mItm->GetLabel() << "\n";
+	fx::MenuItem* openItem = new fx::MenuItem("Open", [](fx::MenuItem* mItm) {
+		std::cout << "Clicked: " << mItm->GetLabel() << "\n";
 	});
-	fx::MenuItem itm3("Item 3", [](fx::MenuItem* mItm) {
-		std::cout << "Menu Item Clicked : " << mItm->GetLabel() << "\n";
+	fx::MenuItem* saveItem = new fx::MenuItem("Save", [](fx::MenuItem* mItm) {
+		std::cout << "Clicked: " << mItm->GetLabel() << "\n";
 	});
-	Menu.AddMenuItem(itm1);
-	Menu.AddMenuItem(itm2);
-	Menu.AddMenuItem(itm3);
-	MenuBar.AddMenu(Menu);
-	window->SetMenuBar(MenuBar);
+
+	fx::Menu* exportSubMenu = new fx::Menu("Export", true);
+	fx::MenuItem* pdfItem = new fx::MenuItem("PDF", [](fx::MenuItem* mItm) {
+		std::cout << "Exporting to PDF\n";
+	});
+	fx::MenuItem* docItem = new fx::MenuItem("DOCX", [](fx::MenuItem* mItm) {
+		std::cout << "Exporting to DOCX\n";
+	});
+	exportSubMenu->AddMenuItem(pdfItem);
+	exportSubMenu->AddMenuItem(docItem);
+
+	fx::MenuItem* exportItem = new fx::MenuItem("Export", nullptr, true, false);
+
+	menu1->AddMenuItem(newItem);
+	menu1->AddMenuItem(openItem);
+	menu1->AddMenuItem(saveItem);
+	menu1->AddSeprator();
+	menu1->AddMenuItemWithSub(exportItem,exportSubMenu);
+
+	fx::Menu* menu2 = new fx::Menu("Edit", true);
+	fx::MenuItem* undoItem = new fx::MenuItem("Undo", [](fx::MenuItem* mItm) {
+		std::cout << "Undo Action\n";
+	});
+	fx::MenuItem* redoItem = new fx::MenuItem("Redo", [](fx::MenuItem* mItm) {
+		std::cout << "Redo Action\n";
+	});
+	menu2->AddMenuItem(undoItem);
+	menu2->AddMenuItem(redoItem);
+
+	menuBar->AddMenu(menu1);
+	menuBar->AddMenu(menu2);
+
+	window->SetMenuBar(menuBar);
 
 	window->showWindow();
 	fx::App::Instance().SetMainWindow(window);

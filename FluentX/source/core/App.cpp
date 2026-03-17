@@ -37,10 +37,20 @@ void NAMESPACE_FLUENTX::App::UnregisterWindow(MainWindow* wnd)
 }
 
 
+void NAMESPACE_FLUENTX::App::Init()
+{
+	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	this->isInit = true;
+}
+
 int NAMESPACE_FLUENTX::App::Run()
 {
+	if (!isInit) {
+		FLUENTX_THROW_ERROR("(App::Run failed) Cannot Run App\nIssue: App not successfully init!");
+		return EXIT_FAILURE;
+	}
 	if (!mMainWindow) {
-		FLUENTX_THROW_ERROR("Cannot Run App!\nIssue: Main Window Not Set");
+		FLUENTX_THROW_ERROR("(App::Run failed) Cannot Run App!\nIssue: Main Window Not Set");
 		return EXIT_FAILURE;
 	}
 	mRunning = true;
@@ -110,9 +120,9 @@ void NAMESPACE_FLUENTX::App::Shutdown()
 	for (auto& win : mRegisteredWindows) {
 		if (win) {
 			win->hideWindow();
-			std::cout << "Win Hidden (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
+			//std::cout << "Win Hidden (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
 			::SendMessage(win->getWndContext().hWnd, WM_CLOSE, NULL, NULL);
-			std::cout << "Win Closed (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
+			//std::cout << "Win Closed (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
 		}
 	}
 	if (mMainWindow) mMainWindow->hideWindow();
@@ -145,19 +155,21 @@ void NAMESPACE_FLUENTX::App::CheckMenuRebuilds()
 	{
 		if (!win || !win->IsUsingMenuBar()) continue;
 
-		MenuBar& bar = win->getMenuBar();
-		if (bar.GetRebuild())
+		MenuBar* bar = win->getMenuBar();
+		if (bar->GetRebuild())
 		{
+			//std::cout << "Sending WM rebuild Menu\n";
 			::SendMessage(win->getWndContext().hWnd, WM_FLUENTX_REBUILD_MENU, 0, 0);
-			bar.FlagRebuild(false); 
+			bar->FlagRebuild(false); 
 		}
 	}
 	if (mMainWindow && mMainWindow->IsUsingMenuBar()) {
-		MenuBar& bar = mMainWindow->getMenuBar();
-		if (bar.GetRebuild())
+		MenuBar* bar = mMainWindow->getMenuBar();
+		if (bar->GetRebuild())
 		{
+			//std::cout << "Sending WM rebuild Menu\n";
 			::SendMessage(mMainWindow->getWndContext().hWnd, WM_FLUENTX_REBUILD_MENU, 0, 0);
-			bar.FlagRebuild(false);
+			bar->FlagRebuild(false);
 		}
 	}
 }

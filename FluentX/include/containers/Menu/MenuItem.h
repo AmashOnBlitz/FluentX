@@ -2,6 +2,8 @@
 #include "core/config.h"
 #include <functional>
 
+#define FLUENTX_STR_MENU_SEP "__FLUENTX__INTERNAL__MENU__SEPRATOR__"
+
 namespace NAMESPACE_FLUENTX {
 
 	class Menu;
@@ -26,8 +28,15 @@ namespace NAMESPACE_FLUENTX {
 		OnMenuItemClick GetOnClick();
 
 		// USED INTERNALLY -------
-		void SetParent(Menu* menu);
-
+		void _SetParent(Menu* menu);
+		// USED INTERNALLY -------
+		void _SetSubMenu(Menu* menu);
+		// USED INTERNALLY -------
+		Menu* _GetSubMenu();
+		// USED INTERNALLY -------
+		void _SetIsSubMenu(bool _isSubMenu);
+		// USED INTERNALLY -------
+		bool _GetIsSubMenu();
 	private: // Funcs
 		void FlagParentRebuild();
 	private: // Vars 
@@ -36,5 +45,8 @@ namespace NAMESPACE_FLUENTX {
 		std::string mLabel = "";
 		Menu* mParentMenu = nullptr;
 		OnMenuItemClick mOnClick;
+
+		Menu* mSubMenu = nullptr; // OPTIONAL : To support sub menu functionality 
+		bool isSubMenu = false; // OPTIONAL : To support sub menu functionality 
 	};
 }
