@@ -11,6 +11,11 @@ int main(int argc, char* argv[]) {
 
 	fx::MainWindow* window = new fx::MainWindow();
 	window->Init("First Window", 1600, 800, 50, 50, fx::MainWindowStylePresets::DefaultWindow);
+	window->loadWindowData();
+	window->BeforeClose([&window](std::string) {
+		window->saveWindowData();
+		return true;
+	});
 	window->onClose([&window](std::string){
 		fx::App::Instance().Shutdown();
 	});
@@ -61,7 +66,7 @@ int main(int argc, char* argv[]) {
 
 	window->SetMenuBar(menuBar);
 
-	window->showWindow();
+	window->ShowWindow();
 	fx::App::Instance().SetMainWindow(window);
 
 	fx::App::Instance().OnUpdate([&]() {
@@ -69,7 +74,6 @@ int main(int argc, char* argv[]) {
 		//	window->GetPosX() + 1,
 		//	window->GetPosY() + 1,
 		//	window->GetWidth() + 1,
-		//	window->GetHeight() + 1
 		//);
 	});
 	return fx::App::Instance().Run();

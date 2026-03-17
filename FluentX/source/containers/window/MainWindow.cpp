@@ -130,7 +130,7 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 
 		SetMenu(hwnd, hMenu);
 		DrawMenuBar(hwnd);
-		break;
+		return 1;
 	}
 
 	case WM_COMMAND:
@@ -146,9 +146,20 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 				if (callback) callback(clickedItem);
 			}
 		}
-		break;
+		return 1;
 	}
-
+	case WM_CLOSE: {
+		bool allowClose = true;
+		if (mBeforeClose)
+		{
+			allowClose = mBeforeClose(this->GetWindowTitle(this->getWndContext().hWnd));
+		}
+		if (allowClose)
+		{
+			DestroyWindow(hwnd); 
+		}
+		return 0;
+	}
 	case WM_DESTROY:
 		this->mOnClose(WStringToString(mWindowName));
 		break;

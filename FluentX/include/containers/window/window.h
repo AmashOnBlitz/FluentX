@@ -9,6 +9,7 @@
 namespace NAMESPACE_FLUENTX {
 
 	typedef std::function<void(std::string)> OnWindowClose;
+	typedef std::function<bool(std::string)> BeforeWindowClose;
 
 	class Window {
 	public:
@@ -18,11 +19,12 @@ namespace NAMESPACE_FLUENTX {
 		WindowContext& getWndContext();
 		bool setWndContext(WindowContext& wndCont);
 
-		bool showWindow();
-		bool hideWindow();
+		bool ShowWindow();
+		bool HideWindow();
 
 		void onClose(OnWindowClose func);
-		std::string fetchLastErr();
+		void BeforeClose(BeforeWindowClose func);
+		std::string FetchLastErr();
 
 		void SetPos(int x, int y);
 		void SetDimensions(int width, int height);
@@ -33,6 +35,9 @@ namespace NAMESPACE_FLUENTX {
 		int GetWidth();
 		int GetHeight();
 
+		bool saveWindowData();
+		void loadWindowData();
+
 	protected:
 		void setLastErr(std::string _e);
 		DWORD ConvToWin32WndStyle_Creation(MainWindowCreationFlags style);
@@ -40,6 +45,7 @@ namespace NAMESPACE_FLUENTX {
 		int ConvToWin32WndStyle_Startup(MainWindowStartupState state);
 		void ApplyUIFlags(HWND hwnd, MainWindowUIFlags flags);
 		void ApplyBehaviorFlags(HWND hwnd, MainWindowBehaviorFlags flags);
+		std::string GetWindowTitle(HWND hwnd);
 
 	private: //VARS
 		WindowContext* mWndContext = nullptr;
@@ -48,6 +54,7 @@ namespace NAMESPACE_FLUENTX {
 
 	protected:
 		OnWindowClose mOnClose = nullptr;
+		BeforeWindowClose mBeforeClose = nullptr;
 		MainWindowStyle mStyle{};
 	};
 

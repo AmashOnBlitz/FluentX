@@ -37,3 +37,23 @@ std::wstring StringToWString(const std::string& str)
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), wstrTo.data(), size_needed);
     return wstrTo;
 }
+
+std::string GetLocalAppDataPath()
+{
+    char exePath[MAX_PATH] = { 0 };
+    if (GetModuleFileNameA(nullptr, exePath, MAX_PATH) == 0)
+        return ".\\";
+
+    std::filesystem::path path(exePath);
+    std::string exeName = path.stem().string();
+
+    char localAppData[MAX_PATH] = { 0 };
+    if (SUCCEEDED(SHGetFolderPathA(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, localAppData)))
+    {
+        std::filesystem::path finalPath = std::filesystem::path(localAppData) / exeName;
+        std::filesystem::create_directories(finalPath);
+        return finalPath.string();
+    }
+
+    return ".\\";
+}

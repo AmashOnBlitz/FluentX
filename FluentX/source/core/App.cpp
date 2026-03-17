@@ -119,13 +119,13 @@ void NAMESPACE_FLUENTX::App::Shutdown()
 
 	for (auto& win : mRegisteredWindows) {
 		if (win) {
-			win->hideWindow();
+			win->HideWindow();
 			//std::cout << "Win Hidden (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
 			::SendMessage(win->getWndContext().hWnd, WM_CLOSE, NULL, NULL);
 			//std::cout << "Win Closed (Class Name) : " << WStringToString(win->getWndContext().wndClassEx.lpszClassName) << "\n";
 		}
 	}
-	if (mMainWindow) mMainWindow->hideWindow();
+	if (mMainWindow) mMainWindow->HideWindow();
 	PostQuitMessage(0);
 }
 

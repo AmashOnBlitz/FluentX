@@ -3,6 +3,8 @@
 #include "core/macroFuncs.h"
 #include <containers/window/MainWindow.h>
 #include <dwmapi.h>
+#include "tinyxml2/tinyxml2.h"
+#include <filesystem>
 
 NAMESPACE_FLUENTX::Window::Window()
 {
@@ -30,7 +32,7 @@ bool NAMESPACE_FLUENTX::Window::setWndContext(WindowContext& wndCont)
 	return true;
 }
 
-bool NAMESPACE_FLUENTX::Window::showWindow()
+bool NAMESPACE_FLUENTX::Window::ShowWindow()
 {
 	if (mWndContext) {
 		if (mWndContext->hWnd != INVALID_HANDLE_VALUE && mWndContext->hWnd != NULL) {
@@ -45,7 +47,7 @@ bool NAMESPACE_FLUENTX::Window::showWindow()
 	return false;
 }
 
-bool NAMESPACE_FLUENTX::Window::hideWindow()
+bool NAMESPACE_FLUENTX::Window::HideWindow()
 {
 	if (mWndContext) {
 		if (mWndContext->hWnd != INVALID_HANDLE_VALUE && mWndContext->hWnd != NULL) {
@@ -64,7 +66,12 @@ void NAMESPACE_FLUENTX::Window::onClose(OnWindowClose func)
 	mOnClose = func;
 }
 
-std::string NAMESPACE_FLUENTX::Window::fetchLastErr()
+void NAMESPACE_FLUENTX::Window::BeforeClose(BeforeWindowClose func)
+{
+	mBeforeClose = func;
+}
+
+std::string NAMESPACE_FLUENTX::Window::FetchLastErr()
 {
 	std::string err = this->errStr;
 	this->errStr = "";
@@ -145,6 +152,147 @@ int NAMESPACE_FLUENTX::Window::GetHeight()
 	);
 	return (mRect.bottom - mRect.top);
 }
+
+bool NAMESPACE_FLUENTX::Window::saveWindowData()
+{
+	namespace fs = std::filesystem;
+
+	if (!this->mWndContext->hWnd)
+	{
+		std::string err = "HWND not found, maybe incomplete window creation!";
+		this->setLastErr(err);
+		FLUENTX_THROW_ERROR(err);
+		return false;
+	}
+
+	int x = this->GetPosX();
+	int y = this->GetPosY();
+	int w = this->GetWidth();
+	int h = this->GetHeight();
+
+	std::string basePath = GetLocalAppDataPath();
+	std::string folderPath = basePath + "\\WindowMetaData";
+	fs::create_directories(folderPath);
+
+	std::string filePath = folderPath + "\\WindowStates.xml";
+	std::string windowName = GetWindowTitle(this->mWndContext->hWnd);
+
+	tinyxml2::XMLDocument doc;
+
+	if (fs::exists(filePath))
+	{
+		if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS)
+		{
+			doc.Clear();
+		}
+	}
+
+	tinyxml2::XMLElement* root = doc.FirstChildElement("Windows");
+	if (!root)
+	{
+		root = doc.NewElement("Windows");
+		doc.InsertFirstChild(root);
+	}
+
+	tinyxml2::XMLElement* windowElem = root->FirstChildElement("Window");
+	while (windowElem)
+	{
+		const char* nameAttr = windowElem->Attribute("title");
+		if (nameAttr && windowName == nameAttr)
+			break;
+		windowElem = windowElem->NextSiblingElement("Window");
+	}
+
+	if (!windowElem)
+		windowElem = doc.NewElement("Window");
+
+	windowElem->SetAttribute("title", windowName.c_str());
+
+	tinyxml2::XMLElement* posElem = windowElem->FirstChildElement("Position");
+	if (!posElem)
+		posElem = doc.NewElement("Position");
+
+	posElem->SetAttribute("x", x);
+	posElem->SetAttribute("y", y);
+
+	tinyxml2::XMLElement* sizeElem = windowElem->FirstChildElement("Size");
+	if (!sizeElem)
+		sizeElem = doc.NewElement("Size");
+
+	sizeElem->SetAttribute("width", w);
+	sizeElem->SetAttribute("height", h);
+
+	if (!windowElem->FirstChildElement("Position"))
+		windowElem->InsertEndChild(posElem);
+	if (!windowElem->FirstChildElement("Size"))
+		windowElem->InsertEndChild(sizeElem);
+
+	if (!windowElem->Parent())
+		root->InsertEndChild(windowElem);
+
+	doc.SaveFile(filePath.c_str());
+	return true;
+}
+
+void NAMESPACE_FLUENTX::Window::loadWindowData()
+{
+	namespace fs = std::filesystem;
+
+	if (!this->mWndContext->hWnd)
+	{
+		std::string err = "HWND not found, cannot load window data!";
+		this->setLastErr(err);
+		FLUENTX_THROW_ERROR(err);
+		return;
+	}
+
+	std::string basePath = GetLocalAppDataPath();
+	std::string folderPath = basePath + "\\WindowMetaData";
+	std::string filePath = folderPath + "\\WindowStates.xml";
+	if (!fs::exists(filePath))
+		return;
+
+	tinyxml2::XMLDocument doc;
+	if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS)
+		return;
+
+	tinyxml2::XMLElement* root = doc.FirstChildElement("Windows");
+	if (!root) return;;
+
+	std::string windowName = GetWindowTitle(this->mWndContext->hWnd);
+	tinyxml2::XMLElement* windowElem = root->FirstChildElement("Window");
+
+	while (windowElem)
+	{
+		const char* nameAttr = windowElem->Attribute("title");
+		if (nameAttr && windowName == nameAttr)
+			break;
+		windowElem = windowElem->NextSiblingElement("Window");
+	}
+
+	if (!windowElem) return;
+
+	tinyxml2::XMLElement* posElem = windowElem->FirstChildElement("Position");
+	tinyxml2::XMLElement* sizeElem = windowElem->FirstChildElement("Size");
+
+	if (!posElem || !sizeElem)
+		return;
+
+	int x, y, w, h;
+	bool valid = true;
+
+	if (posElem->QueryIntAttribute("x", &x) != tinyxml2::XML_SUCCESS) valid = false;
+	if (posElem->QueryIntAttribute("y", &y) != tinyxml2::XML_SUCCESS) valid = false;
+	if (sizeElem->QueryIntAttribute("width", &w) != tinyxml2::XML_SUCCESS) valid = false;
+	if (sizeElem->QueryIntAttribute("height", &h) != tinyxml2::XML_SUCCESS) valid = false;
+
+	if (w <= 0 || h <= 0) valid = false;
+
+	if (valid)
+		this->SetBounds(x, y, w, h);
+}
+
+
 
 void NAMESPACE_FLUENTX::Window::setLastErr(std::string _e)
 {
@@ -274,4 +422,14 @@ void NAMESPACE_FLUENTX::Window::ApplyBehaviorFlags(HWND hwnd, MainWindowBehavior
 		LONG ex = GetWindowLong(hwnd, GWL_EXSTYLE);
 		SetWindowLong(hwnd, GWL_EXSTYLE, ex | WS_EX_NOACTIVATE);
 	}
+}
+
+std::string NAMESPACE_FLUENTX::Window::GetWindowTitle(HWND hwnd)
+{
+	if (!hwnd) return "window";
+	int len = ::GetWindowTextLengthA(hwnd);
+	if (len == 0) return "window";
+	std::string title(len, '\0');
+	::GetWindowTextA(hwnd, title.data(), len + 1);
+	return title;
 }
