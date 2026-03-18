@@ -160,10 +160,62 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 		}
 		return 0;
 	}
+	case WM_SETFOCUS:
+		this->SetFocus(true);
+		break;
+	case WM_KILLFOCUS:
+		this->SetFocus(false);
+		break;
+	case WM_CHAR:
+	{
+		if (mOnKeyDown)
+		{
+			KeyEvent e{};
+			e.keyType = Key::Character;
+			e.ch = (char)wParam;
+
+			e.ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+			mOnKeyDown(e);
+		}
+		break;
+	}
+	case WM_KEYDOWN:
+	{
+		if (mOnKeyDown)
+		{
+			KeyEvent e{};
+			e.isRepeat = (lParam & (1 << 30)) != 0;
+
+			e.ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+			switch (wParam)
+			{
+			case VK_ESCAPE: e.keyType = Key::Escape; break;
+			case VK_RETURN: e.keyType = Key::Enter; break;
+			case VK_BACK:   e.keyType = Key::Backspace; break;
+			case VK_TAB:    e.keyType = Key::Tab; break;
+			case VK_LEFT:   e.keyType = Key::Left; break;
+			case VK_RIGHT:  e.keyType = Key::Right; break;
+			case VK_UP:     e.keyType = Key::Up; break;
+			case VK_DOWN:   e.keyType = Key::Down; break;
+			default:
+				return 0;
+			}
+
+			mOnKeyDown(e);
+		}
+		break;
+	}
+
+
 	case WM_DESTROY:
 		this->mOnClose(WStringToString(mWindowName));
 		break;
-
 	default:
 		break;
 	}
@@ -195,6 +247,11 @@ NAMESPACE_FLUENTX::MenuBar* NAMESPACE_FLUENTX::MainWindow::getMenuBar()
 		FLUENTX_THROW_ERROR(err);
 	}
 	return mMenuBar;
+}
+
+void NAMESPACE_FLUENTX::MainWindow::OnKeyDown(OnWndKeyDown func)
+{
+	this->mOnKeyDown = func;
 }
 
 HMENU NAMESPACE_FLUENTX::MainWindow::BuildMenu(Menu* menu, int& iMenuID)

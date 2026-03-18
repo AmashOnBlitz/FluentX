@@ -38,6 +38,7 @@ namespace NAMESPACE_FLUENTX {
 		bool saveWindowData();
 		void loadWindowData();
 
+		bool IsFocused();
 	protected:
 		void setLastErr(std::string _e);
 		DWORD ConvToWin32WndStyle_Creation(MainWindowCreationFlags style);
@@ -46,6 +47,8 @@ namespace NAMESPACE_FLUENTX {
 		void ApplyUIFlags(HWND hwnd, MainWindowUIFlags flags);
 		void ApplyBehaviorFlags(HWND hwnd, MainWindowBehaviorFlags flags);
 		std::string GetWindowTitle(HWND hwnd);
+		void SetFocus(bool focus);
+
 
 	private: //VARS
 		WindowContext* mWndContext = nullptr;
@@ -56,6 +59,7 @@ namespace NAMESPACE_FLUENTX {
 		OnWindowClose mOnClose = nullptr;
 		BeforeWindowClose mBeforeClose = nullptr;
 		MainWindowStyle mStyle{};
+		bool mIsFocused = true;
 	};
 
 	LRESULT CALLBACK fnMainWinProcNavigator(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

@@ -7,6 +7,31 @@
 
 namespace NAMESPACE_FLUENTX {
 
+	enum class Key {
+		Unknown = 0,
+		Escape,
+		Enter,
+		Backspace,
+		Tab,
+		Left,
+		Right,
+		Up,
+		Down,
+		Character
+	};
+
+
+	struct KeyEvent {
+		Key keyType;
+		char ch;
+		bool isRepeat;
+		bool ctrl;
+		bool shift;
+		bool alt;
+	};
+
+	typedef std::function<void(KeyEvent)> OnWndKeyDown;
+
 	class MainWindow : public Window {
 	public:
 		MainWindow();
@@ -28,6 +53,7 @@ namespace NAMESPACE_FLUENTX {
 		void UseMenuBar(bool use);
 		bool IsUsingMenuBar();
 		MenuBar* getMenuBar();
+		void OnKeyDown(OnWndKeyDown func);
 	private: //Funcs
 		HMENU BuildMenu(Menu* menu, int& iMenuID);
 	private: //Vars
@@ -37,6 +63,7 @@ namespace NAMESPACE_FLUENTX {
 		std::wstring mWindowName = L"";
 		std::wstring mClassName = L""; 
 		std::vector<MenuItem*> AllVectMenuItems;
+		OnWndKeyDown mOnKeyDown;
 	};
 
 }

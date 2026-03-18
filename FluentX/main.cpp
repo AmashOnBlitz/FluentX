@@ -19,6 +19,11 @@ int main(int argc, char* argv[]) {
 	window->onClose([&window](std::string){
 		fx::App::Instance().Shutdown();
 	});
+	window->OnKeyDown([](fx::KeyEvent e) {
+		if (e.keyType == fx::Key::Character) {
+			std::cout << "Key Pressed : " << e.ch << "\n";
+		}
+	});
 
 	fx::MenuBar* menuBar = new fx::MenuBar();
 

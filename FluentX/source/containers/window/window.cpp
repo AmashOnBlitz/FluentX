@@ -292,6 +292,11 @@ void NAMESPACE_FLUENTX::Window::loadWindowData()
 		this->SetBounds(x, y, w, h);
 }
 
+bool NAMESPACE_FLUENTX::Window::IsFocused()
+{
+	return this->mIsFocused;
+}
+
 
 
 void NAMESPACE_FLUENTX::Window::setLastErr(std::string _e)
@@ -432,4 +437,9 @@ std::string NAMESPACE_FLUENTX::Window::GetWindowTitle(HWND hwnd)
 	std::string title(len, '\0');
 	::GetWindowTextA(hwnd, title.data(), len + 1);
 	return title;
+}
+
+void NAMESPACE_FLUENTX::Window::SetFocus(bool focus)
+{
+	this->mIsFocused = focus;
 }
