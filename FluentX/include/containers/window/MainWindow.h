@@ -19,10 +19,14 @@ namespace NAMESPACE_FLUENTX {
 		Down,
 		Character
 	};
-
+	enum class KeyEventState {
+		Handled = 0,
+		NotHandled
+	};
 
 	struct KeyEvent {
 		Key keyType;
+		KeyEventState state;
 		char ch;
 		bool isRepeat;
 		bool ctrl;

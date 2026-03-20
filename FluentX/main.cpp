@@ -22,6 +22,9 @@ int main(int argc, char* argv[]) {
 	window->OnKeyDown([](fx::KeyEvent e) {
 		if (e.keyType == fx::Key::Character) {
 			std::cout << "Key Pressed : " << e.ch << "\n";
+			if (e.state == fx::KeyEventState::NotHandled) {
+				std::cout << "Event Ready To be Handled!" << std::endl;
+			}
 		}
 	});
 

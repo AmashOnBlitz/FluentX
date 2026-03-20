@@ -177,7 +177,7 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			e.ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
 			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
+			e.state = KeyEventState::NotHandled;
 			mOnKeyDown(e);
 		}
 		break;
@@ -206,7 +206,7 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			default:
 				return 0;
 			}
-
+			e.state = KeyEventState::NotHandled;
 			mOnKeyDown(e);
 		}
 		break;
