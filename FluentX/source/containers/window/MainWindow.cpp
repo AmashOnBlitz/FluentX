@@ -174,14 +174,18 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			e.keyType = Key::Character;
 			e.ch = (char)wParam;
 
+			mLastChar = e.ch;
+
 			e.ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
 			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
 			e.state = KeyEventState::NotHandled;
 			mOnKeyDown(e);
 		}
 		break;
 	}
+
 	case WM_KEYDOWN:
 	{
 		if (mOnKeyDown)
@@ -211,7 +215,57 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 		}
 		break;
 	}
+	case WM_KEYUP:
+	{
+		if (mOnKeyUp)
+		{
+			KeyEvent e{};
+			e.isRepeat = false;
 
+			e.ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+			BYTE keyboardState[256];
+			GetKeyboardState(keyboardState);
+
+			WCHAR buffer[2];
+			int result = ToUnicode(
+				(UINT)wParam,
+				(lParam >> 16) & 0xFF,
+				keyboardState,
+				buffer,
+				2,
+				0
+			);
+
+			if (result == 1)
+			{
+				e.keyType = Key::Character;
+				e.ch = (char)buffer[0];
+			}
+			else
+			{
+				switch (wParam)
+				{
+				case VK_ESCAPE: e.keyType = Key::Escape; break;
+				case VK_RETURN: e.keyType = Key::Enter; break;
+				case VK_BACK:   e.keyType = Key::Backspace; break;
+				case VK_TAB:    e.keyType = Key::Tab; break;
+				case VK_LEFT:   e.keyType = Key::Left; break;
+				case VK_RIGHT:  e.keyType = Key::Right; break;
+				case VK_UP:     e.keyType = Key::Up; break;
+				case VK_DOWN:   e.keyType = Key::Down; break;
+				default:
+					return 0;
+				}
+			}
+
+			e.state = KeyEventState::NotHandled;
+			mOnKeyUp(e);
+		}
+		break;
+	}
 
 	case WM_DESTROY:
 		this->mOnClose(WStringToString(mWindowName));
@@ -252,6 +306,11 @@ NAMESPACE_FLUENTX::MenuBar* NAMESPACE_FLUENTX::MainWindow::getMenuBar()
 void NAMESPACE_FLUENTX::MainWindow::OnKeyDown(OnWndKeyDown func)
 {
 	this->mOnKeyDown = func;
+}
+
+void NAMESPACE_FLUENTX::MainWindow::OnKeyUp(OnWndKeyUp func)
+{
+	this->mOnKeyUp = func;
 }
 
 HMENU NAMESPACE_FLUENTX::MainWindow::BuildMenu(Menu* menu, int& iMenuID)

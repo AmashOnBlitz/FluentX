@@ -95,5 +95,8 @@
     <ClInclude Include="external\tinyxml2\tinyxml2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\containers\window\KeyEvents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

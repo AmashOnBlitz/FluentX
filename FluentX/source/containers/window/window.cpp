@@ -178,7 +178,7 @@ bool NAMESPACE_FLUENTX::Window::saveWindowData()
 	std::string windowName = GetWindowTitle(this->mWndContext->hWnd);
 
 	tinyxml2::XMLDocument doc;
-
+	//std::cout << "Saved in : " << filePath << std::endl;
 	if (fs::exists(filePath))
 	{
 		if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS)

@@ -162,6 +162,7 @@
     <ClInclude Include="include\containers\Menu\Menu.h" />
     <ClInclude Include="include\containers\Menu\MenuBar.h" />
     <ClInclude Include="include\containers\Menu\MenuItem.h" />
+    <ClInclude Include="include\containers\window\KeyEvents.h" />
     <ClInclude Include="include\containers\window\MainWindow.h" />
     <ClInclude Include="include\containers\window\MainWindowStyle.h" />
     <ClInclude Include="include\containers\window\WindowContext.h" />

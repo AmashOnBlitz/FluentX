@@ -194,4 +194,52 @@ namespace NAMESPACE_FLUENTX {
 
     }
 
+    enum class WindowTransitionDirection
+    {
+        None,
+        Top,
+        Bottom,
+        Left,
+        Right
+    };
+
+    struct WindowTransition {
+    public:
+        WindowTransitionDirection direction = WindowTransitionDirection::None;
+        int durationMS = 200;
+    };
+
+    struct WindowStyleTransition { // base ---
+    public:
+        bool enabled = false;
+        WindowTransition animation;
+    };
+
+    struct WindowMinimizeTransition : public WindowStyleTransition
+    {
+    public:
+        bool slide = true;
+        bool scale = true;
+        bool fade = true;
+    };
+
+    struct WindowRestoreTransition : public WindowStyleTransition
+    {
+    public:
+        bool slide = true;
+        bool scale = true;
+        bool fade = true;
+    };
+
+    //struct WindowMaximizeTransition : public WindowStyleTransition
+    //{
+    //};
+
+    struct WindowTransitionSet {
+    public:
+        WindowMinimizeTransition minimize{};
+        //WindowMaximizeTransition maximize{};
+        WindowRestoreTransition restore{};
+    };
+
 }

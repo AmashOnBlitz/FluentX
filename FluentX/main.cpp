@@ -27,7 +27,15 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	});
-
+	window->OnKeyUp([](fx::KeyEvent e) {
+		if (e.keyType == fx::Key::Character) {
+			std::cout << "Key Up\n";
+			std::cout << "Key Pressed : " << e.ch << "\n";
+			if (e.state == fx::KeyEventState::NotHandled) {
+				std::cout << "Event Ready To be Handled!" << std::endl;
+			}
+		}
+	});
 	fx::MenuBar* menuBar = new fx::MenuBar();
 
 	fx::Menu* menu1 = new fx::Menu("File", true);

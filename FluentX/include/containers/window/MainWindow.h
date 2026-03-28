@@ -4,37 +4,9 @@
 #include "MainWindowStyle.h"
 #include <string>
 #include "containers/Menu/MenuBar.h"
+#include "KeyEvents.h"
 
 namespace NAMESPACE_FLUENTX {
-
-	enum class Key {
-		Unknown = 0,
-		Escape,
-		Enter,
-		Backspace,
-		Tab,
-		Left,
-		Right,
-		Up,
-		Down,
-		Character
-	};
-	enum class KeyEventState {
-		Handled = 0,
-		NotHandled
-	};
-
-	struct KeyEvent {
-		Key keyType;
-		KeyEventState state;
-		char ch;
-		bool isRepeat;
-		bool ctrl;
-		bool shift;
-		bool alt;
-	};
-
-	typedef std::function<void(KeyEvent)> OnWndKeyDown;
 
 	class MainWindow : public Window {
 	public:
@@ -58,6 +30,7 @@ namespace NAMESPACE_FLUENTX {
 		bool IsUsingMenuBar();
 		MenuBar* getMenuBar();
 		void OnKeyDown(OnWndKeyDown func);
+		void OnKeyUp(OnWndKeyUp func);
 	private: //Funcs
 		HMENU BuildMenu(Menu* menu, int& iMenuID);
 	private: //Vars
@@ -68,6 +41,8 @@ namespace NAMESPACE_FLUENTX {
 		std::wstring mClassName = L""; 
 		std::vector<MenuItem*> AllVectMenuItems;
 		OnWndKeyDown mOnKeyDown;
+		OnWndKeyUp mOnKeyUp;
+		char mLastChar = 0;
 	};
 
 }

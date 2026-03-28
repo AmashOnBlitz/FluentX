@@ -52,7 +52,7 @@ std::string GetLocalAppDataPath()
     {
         std::filesystem::path finalPath = std::filesystem::path(localAppData) / exeName;
         std::filesystem::create_directories(finalPath);
-        return finalPath.string();
+        return std::string(finalPath.string() + "\\FXData");
     }
 
     return ".\\";
