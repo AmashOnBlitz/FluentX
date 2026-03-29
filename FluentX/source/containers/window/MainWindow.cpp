@@ -105,9 +105,6 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 //	SetWindowLong(this->getWndContext().hWnd, GWL_STYLE, style);
 //}
 
-
-
-
 LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static HMENU hMenu = nullptr;
@@ -118,7 +115,6 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 	case WM_FLUENTX_REBUILD_MENU:
 	{
 		if (!mMenuBar) return 1;
-		//std::cout << "(Re)Creating Menu\n";
 		AllVectMenuItems.clear();
 		hMenu = CreateMenu();
 		int iMenuID = 1800; // 1800 - 2000 RESERVED for MENU COMMAND IDs
@@ -156,12 +152,12 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 		{
 		case SC_MINIMIZE:
 		{
-			if (mIsAnimatingMinimize)
-			{
-				mIsAnimatingMinimize = false;
-				break;
-			}
 			OnMinimizeRequested();
+			return 0;
+		}
+		case SC_RESTORE:
+		{
+			OnRestoreRequested();
 			return 0;
 		}
 		}
@@ -296,7 +292,6 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-
 void NAMESPACE_FLUENTX::MainWindow::SetMenuBar(MenuBar* mBar)
 {
 	this->mMenuBar = mBar;
@@ -372,189 +367,273 @@ void NAMESPACE_FLUENTX::MainWindow::OnMinimizeRequested()
 {
 	HWND hwnd = this->getWndContext().hWnd;
 	MainWindowMinimizeTransition& MinTrans = this->getMainWndTransSet().minimize;
-	WindowTransitionDirection& dir = MinTrans.animation.direction;
-	if (!MinTrans.enabled) {
+	WindowAnimEffect effect = MinTrans.animation.effect;
+
+	if (!MinTrans.enabled || effect == WindowAnimEffect::None) {
 		::ShowWindow(hwnd, SW_MINIMIZE);
 		return;
 	}
 
 	RECT rc;
 	GetWindowRect(hwnd, &rc);
+	this->mRestoreRect = rc;
 	int width = rc.right - rc.left;
 	int height = rc.bottom - rc.top;
+
+	HMONITOR hMon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO mi = { sizeof(mi) };
+	GetMonitorInfo(hMon, &mi);
+	const RECT& wa = mi.rcWork;
 
 	HDC hdcWin = GetDC(hwnd);
 	HDC hdcMem = CreateCompatibleDC(hdcWin);
 
-	HBITMAP bmp = CreateCompatibleBitmap(hdcWin, width, height);
-	SelectObject(hdcMem, bmp);
+	BITMAPINFOHEADER bi = {};
+	bi.biSize = sizeof(bi);
+	bi.biWidth = width;
+	bi.biHeight = -height;
+	bi.biPlanes = 1;
+	bi.biBitCount = 32;
+	bi.biCompression = BI_RGB;
 
+	void* pvBits = nullptr;
+	HBITMAP bmp = CreateDIBSection(hdcWin, reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS, &pvBits, nullptr, 0);
+	SelectObject(hdcMem, bmp);
 	PrintWindow(hwnd, hdcMem, PW_RENDERFULLCONTENT);
 
+	auto* pixels = static_cast<DWORD*>(pvBits);
+	for (int i = 0; i < width * height; ++i)
+		pixels[i] |= 0xFF000000;
+
 	HWND hAnimWnd = CreateWindowEx(
-		WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
-		L"STATIC",
-		nullptr,
-		WS_POPUP,
-		rc.left, rc.top,
-		width, height,
-		nullptr, nullptr,
-		GetModuleHandle(nullptr),
-		nullptr
+		WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+		L"STATIC", nullptr, WS_POPUP,
+		rc.left, rc.top, width, height,
+		nullptr, nullptr, GetModuleHandle(nullptr), nullptr
 	);
 
 	POINT src = { 0, 0 };
-	POINT dst = { rc.left, rc.top };
-	SIZE size = { width, height };
-
-	BLENDFUNCTION blend{};
+	BLENDFUNCTION blend = {};
 	blend.BlendOp = AC_SRC_OVER;
+	blend.AlphaFormat = AC_SRC_ALPHA;
 	blend.SourceConstantAlpha = 255;
 
-	UpdateLayeredWindow(
-		hAnimWnd,
-		nullptr,
-		&dst,
-		&size,
-		hdcMem,
-		&src,
-		0,
-		&blend,
-		ULW_ALPHA
-	);
+	POINT initDst0 = { rc.left, rc.top };
+	SIZE  initSz0 = { width, height };
+	UpdateLayeredWindow(hAnimWnd, nullptr, &initDst0, &initSz0, hdcMem, &src, 0, &blend, ULW_ALPHA);
 
-	::ShowWindow(hAnimWnd, SW_SHOW);
 	::ShowWindow(hwnd, SW_HIDE);
+	::ShowWindow(hAnimWnd, SW_SHOWNA);
 
-	mIsAnimatingMinimize = true;
-	::ShowWindow(hwnd, SW_MINIMIZE);
+	ANIMATIONINFO ai = { sizeof(ai) };
+	SystemParametersInfo(SPI_GETANIMATION, sizeof(ai), &ai, 0);
+	int savedAnim = ai.iMinAnimate;
+	ai.iMinAnimate = 0;
+	SystemParametersInfo(SPI_SETANIMATION, sizeof(ai), &ai, 0);
 
-	int screenH = GetSystemMetrics(SM_CYSCREEN);
-
-	int duration = MinTrans.animation.durationMS;
+	const int duration = MinTrans.animation.durationMS;
+	timeBeginPeriod(1);
 	auto start = std::chrono::high_resolution_clock::now();
 
 	while (true)
 	{
-		auto now = std::chrono::high_resolution_clock::now();
+		auto  now = std::chrono::high_resolution_clock::now();
 		float elapsed = std::chrono::duration<float, std::milli>(now - start).count();
+		float p = (elapsed / static_cast<float>(duration) < 1.0f) ? elapsed / static_cast<float>(duration) : 1.0f;
+		float e = p * p * p;
+		float s = 1.0f - e;
 
-		float p = elapsed / duration;
-		if (p > 1.0f) p = 1.0f;
+		int newW = width, newH = height;
+		int newX = rc.left, newY = rc.top;
 
-		float e = 1.0f - pow(1.0f - p, 3);
-
-		int newX = rc.left;
-		int newY = rc.top;
-		int newW = width;
-		int newH = height;
-		newW = max(1, newW);
-		newH = max(1, newH);
-
-		if (MinTrans.slide)
+		switch (effect)
 		{
-			switch (dir)
-			{
-			case WindowTransitionDirection::Bottom:
-			{
-				newH = (int)(height * (1.0f - e));
-				newY = rc.top + (height - newH);
-				break;
-			}
-
-			case WindowTransitionDirection::Top:
-			{
-				newH = (int)(height * (1.0f - e));
-				newY = rc.top;
-				break;
-			}
-
-			case WindowTransitionDirection::Right:
-			{
-				newW = (int)(width * (1.0f - e));
-				newX = rc.left + (width - newW);
-				break;
-			}
-
-			case WindowTransitionDirection::Left:
-			{
-				newW = (int)(width * (1.0f - e));
-				newX = rc.left;
-				break;
-			}
-
-			default:
-				break;
-			}
-		}
-
-		if (MinTrans.scale)
-		{
-			float s = (1.0f - e);
-
-			int scaledW = (int)(width * s);
-			int scaledH = (int)(height * s);
-			int centerX = rc.left + width / 2;
-			int centerY = rc.top + height / 2;
-
-			newX = centerX - scaledW / 2;
-			newY = centerY - scaledH / 2;
-			newW = scaledW;
-			newH = scaledH;
-		}
-
-		BYTE alpha = 255;
-		if (MinTrans.fade)
-			alpha = (BYTE)(255 * (1.0f - p));
-
-		SIZE newSize = { newW, newH };
-		POINT newDst = { newX, newY };
-
-		BLENDFUNCTION b = blend;
-		b.SourceConstantAlpha = alpha;
-
-		HDC hdcScaled = CreateCompatibleDC(hdcWin);
-		HBITMAP bmpScaled = CreateCompatibleBitmap(hdcWin, newW, newH);
-		SelectObject(hdcScaled, bmpScaled);
-		StretchBlt(
-			hdcScaled,
-			0,
-			0,
-			newW,
-			newH,
-			hdcMem,
-			0,
-			0,
-			width,
-			height,
-			SRCCOPY
-		);
-
-		UpdateLayeredWindow(
-			hAnimWnd,
-			nullptr,
-			&newDst,
-			&newSize,
-			hdcScaled,
-			&src,
-			0,
-			&b,
-			ULW_ALPHA
-		);
-
-		if (p >= 1.0f) {
-			DeleteObject(bmpScaled);
-			DeleteDC(hdcScaled);
+		case WindowAnimEffect::Fade:
+			break;
+		case WindowAnimEffect::Zoom:
+			newW = max(1, static_cast<int>(width * s));
+			newH = max(1, static_cast<int>(height * s));
+			newX = rc.left + (width - newW) / 2;
+			newY = rc.top + (height - newH) / 2;
+			break;
+		case WindowAnimEffect::SlideTop:
+			newH = max(1, static_cast<int>(height * s));
+			newY = static_cast<int>(rc.top * (1.0f - e) + wa.top * e);
+			break;
+		case WindowAnimEffect::SlideBottom:
+			newH = max(1, static_cast<int>(height * s));
+			newY = static_cast<int>(rc.top * (1.0f - e) + (wa.bottom - newH) * e);
+			break;
+		case WindowAnimEffect::SlideLeft:
+			newW = max(1, static_cast<int>(width * s));
+			newX = static_cast<int>(rc.left * (1.0f - e) + (wa.left - newW) * e);
+			break;
+		case WindowAnimEffect::SlideRight:
+			newW = max(1, static_cast<int>(width * s));
+			newX = static_cast<int>(rc.left * (1.0f - e) + wa.right * e);
+			break;
+		default:
 			break;
 		}
 
-		Sleep(8);
+		BLENDFUNCTION b = blend;
+		b.SourceConstantAlpha = MinTrans.animation.fade ? static_cast<BYTE>(255 * (1.0f - p)) : 255;
+
+		POINT dst0 = { newX, newY };
+		SIZE  sz0 = { newW, newH };
+		UpdateLayeredWindow(hAnimWnd, nullptr, &dst0, &sz0, hdcMem, &src, 0, &b, ULW_ALPHA);
+
+		MSG msg;
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		if (p >= 1.0f) break;
+		DwmFlush();
 	}
+
+	timeEndPeriod(1);
 
 	DestroyWindow(hAnimWnd);
 	DeleteObject(bmp);
 	DeleteDC(hdcMem);
-
 	ReleaseDC(hwnd, hdcWin);
 
+	::ShowWindow(hwnd, SW_MINIMIZE);
+	ai.iMinAnimate = savedAnim;
+	SystemParametersInfo(SPI_SETANIMATION, sizeof(ai), &ai, 0);
+}
+
+void NAMESPACE_FLUENTX::MainWindow::OnRestoreRequested()
+{
+	HWND hwnd = this->getWndContext().hWnd;
+	MainWindowRestoreTransition& ResTrans = this->getMainWndTransSet().restore;
+	WindowAnimEffect effect = ResTrans.animation.effect;
+
+	if (!ResTrans.enabled || effect == WindowAnimEffect::None) {
+		::ShowWindow(hwnd, SW_RESTORE);
+		return;
+	}
+
+	RECT rc = this->mRestoreRect;
+	int width = rc.right - rc.left;
+	int height = rc.bottom - rc.top;
+
+	HMONITOR hMon = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO mi = { sizeof(mi) };
+	GetMonitorInfo(hMon, &mi);
+	const RECT& wa = mi.rcWork;
+
+	::ShowWindow(hwnd, SW_RESTORE);
+	::ShowWindow(hwnd, SW_HIDE);
+
+	HDC hdcWin = GetDC(hwnd);
+	HDC hdcMem = CreateCompatibleDC(hdcWin);
+
+	BITMAPINFOHEADER bi = {};
+	bi.biSize = sizeof(bi);
+	bi.biWidth = width;
+	bi.biHeight = -height;
+	bi.biPlanes = 1;
+	bi.biBitCount = 32;
+	bi.biCompression = BI_RGB;
+
+	void* pvBits = nullptr;
+	HBITMAP bmp = CreateDIBSection(hdcWin, reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS, &pvBits, nullptr, 0);
+	SelectObject(hdcMem, bmp);
+	PrintWindow(hwnd, hdcMem, PW_RENDERFULLCONTENT);
+
+	auto* pixels = static_cast<DWORD*>(pvBits);
+	for (int i = 0; i < width * height; ++i)
+		pixels[i] |= 0xFF000000;
+
+	HWND hAnimWnd = CreateWindowEx(
+		WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+		L"STATIC", nullptr, WS_POPUP,
+		rc.left, rc.top, width, height,
+		nullptr, nullptr, GetModuleHandle(nullptr), nullptr
+	);
+
+	POINT src = { 0, 0 };
+	BLENDFUNCTION blend = {};
+	blend.BlendOp = AC_SRC_OVER;
+	blend.AlphaFormat = AC_SRC_ALPHA;
+	blend.SourceConstantAlpha = 255;
+
+	POINT initDst1 = { rc.left, rc.top };
+	SIZE  initSz1 = { width, height };
+	UpdateLayeredWindow(hAnimWnd, nullptr, &initDst1, &initSz1, hdcMem, &src, 0, &blend, ULW_ALPHA);
+	::ShowWindow(hAnimWnd, SW_SHOWNA);
+
+	const int duration = ResTrans.animation.durationMS;
+	timeBeginPeriod(1);
+	auto start = std::chrono::high_resolution_clock::now();
+
+	while (true)
+	{
+		auto  now = std::chrono::high_resolution_clock::now();
+		float elapsed = std::chrono::duration<float, std::milli>(now - start).count();
+		float p = (elapsed / static_cast<float>(duration) < 1.0f) ? elapsed / static_cast<float>(duration) : 1.0f;
+		float e = 1.0f - pow(1.0f - p, 3.0f);
+		float s = e;
+
+		int newW = width, newH = height;
+		int newX = rc.left, newY = rc.top;
+
+		switch (effect)
+		{
+		case WindowAnimEffect::Fade:
+			break;
+		case WindowAnimEffect::Zoom:
+			newW = max(1, static_cast<int>(width * s));
+			newH = max(1, static_cast<int>(height * s));
+			newX = rc.left + (width - newW) / 2;
+			newY = rc.top + (height - newH) / 2;
+			break;
+		case WindowAnimEffect::SlideTop:
+			newH = max(1, static_cast<int>(height * s));
+			newY = static_cast<int>(wa.top * (1.0f - e) + rc.top * e);
+			break;
+		case WindowAnimEffect::SlideBottom:
+			newH = max(1, static_cast<int>(height * s));
+			newY = static_cast<int>((wa.bottom - newH) * (1.0f - e) + rc.top * e);
+			break;
+		case WindowAnimEffect::SlideLeft:
+			newW = max(1, static_cast<int>(width * s));
+			newX = static_cast<int>((wa.left - newW) * (1.0f - e) + rc.left * e);
+			break;
+		case WindowAnimEffect::SlideRight:
+			newW = max(1, static_cast<int>(width * s));
+			newX = static_cast<int>(wa.right * (1.0f - e) + rc.left * e);
+			break;
+		default:
+			break;
+		}
+
+		BLENDFUNCTION b = blend;
+		b.SourceConstantAlpha = ResTrans.animation.fade ? static_cast<BYTE>(255 * p) : 255;
+
+		POINT dst1 = { newX, newY };
+		SIZE  sz1 = { newW, newH };
+		UpdateLayeredWindow(hAnimWnd, nullptr, &dst1, &sz1, hdcMem, &src, 0, &b, ULW_ALPHA);
+
+		MSG msg;
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		if (p >= 1.0f) break;
+		DwmFlush();
+	}
+
+	timeEndPeriod(1);
+
+	::ShowWindow(hwnd, SW_SHOW);
+	SetForegroundWindow(hwnd);
+	DestroyWindow(hAnimWnd);
+	DeleteObject(bmp);
+	DeleteDC(hdcMem);
+	ReleaseDC(hwnd, hdcWin);
 }

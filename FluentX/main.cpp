@@ -12,9 +12,7 @@ int main(int argc, char* argv[]) {
 
 	fx::MainWindowTransitionSet mWndTrSet{};
 	mWndTrSet.minimize.enabled = true;
-	mWndTrSet.minimize.scale = true;
-	mWndTrSet.minimize.slide = true;
-	mWndTrSet.minimize.fade = true;
+	mWndTrSet.restore.enabled = true;
 
 	fx::MainWindow* window = new fx::MainWindow();
 	window->Init("First Window", 1600, 800, 50, 50, nullptr, fx::MainWindowStylePresets::DefaultWindow, mWndTrSet);

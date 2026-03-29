@@ -13,3 +13,6 @@
 #include "tinyxml2/tinyxml2.h"
 #include <shlobj.h>
 #include <filesystem>
+#include <dwmapi.h>
+#include <timeapi.h>
+#include <mmsystem.h>
