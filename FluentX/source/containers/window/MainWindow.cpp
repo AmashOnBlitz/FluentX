@@ -23,10 +23,12 @@ bool NAMESPACE_FLUENTX::MainWindow::Init(
 	int height,
 	int xPos,
 	int yPos,
+	MainWindow* parent,
 	MainWindowStyle style,
-	MainWindow* parent
+	MainWindowTransitionSet transitions
 )
 {
+	this->mMainWndTransSet = transitions;
 	this->mStyle = style;
 	static int windowGenCount = 0;
 	mWindowName = std::wstring(windowName.begin(), windowName.end()); 
@@ -147,6 +149,23 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			}
 		}
 		return 1;
+	}
+	case WM_SYSCOMMAND:
+	{
+		switch (wParam & 0xFFF0)
+		{
+		case SC_MINIMIZE:
+		{
+			if (mIsAnimatingMinimize)
+			{
+				mIsAnimatingMinimize = false;
+				break;
+			}
+			OnMinimizeRequested();
+			return 0;
+		}
+		}
+		break;
 	}
 	case WM_CLOSE: {
 		bool allowClose = true;
@@ -313,6 +332,16 @@ void NAMESPACE_FLUENTX::MainWindow::OnKeyUp(OnWndKeyUp func)
 	this->mOnKeyUp = func;
 }
 
+void NAMESPACE_FLUENTX::MainWindow::setMainWndTransSet(MainWindowTransitionSet set)
+{
+	this->mMainWndTransSet = set;
+}
+
+NAMESPACE_FLUENTX::MainWindowTransitionSet& NAMESPACE_FLUENTX::MainWindow::getMainWndTransSet()
+{
+	return this->mMainWndTransSet;
+}
+
 HMENU NAMESPACE_FLUENTX::MainWindow::BuildMenu(Menu* menu, int& iMenuID)
 {
 	HMENU hMenuPopup = CreateMenu();
@@ -337,4 +366,195 @@ HMENU NAMESPACE_FLUENTX::MainWindow::BuildMenu(Menu* menu, int& iMenuID)
 	}
 
 	return hMenuPopup;
+}
+
+void NAMESPACE_FLUENTX::MainWindow::OnMinimizeRequested()
+{
+	HWND hwnd = this->getWndContext().hWnd;
+	MainWindowMinimizeTransition& MinTrans = this->getMainWndTransSet().minimize;
+	WindowTransitionDirection& dir = MinTrans.animation.direction;
+	if (!MinTrans.enabled) {
+		::ShowWindow(hwnd, SW_MINIMIZE);
+		return;
+	}
+
+	RECT rc;
+	GetWindowRect(hwnd, &rc);
+	int width = rc.right - rc.left;
+	int height = rc.bottom - rc.top;
+
+	HDC hdcWin = GetDC(hwnd);
+	HDC hdcMem = CreateCompatibleDC(hdcWin);
+
+	HBITMAP bmp = CreateCompatibleBitmap(hdcWin, width, height);
+	SelectObject(hdcMem, bmp);
+
+	PrintWindow(hwnd, hdcMem, PW_RENDERFULLCONTENT);
+
+	HWND hAnimWnd = CreateWindowEx(
+		WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
+		L"STATIC",
+		nullptr,
+		WS_POPUP,
+		rc.left, rc.top,
+		width, height,
+		nullptr, nullptr,
+		GetModuleHandle(nullptr),
+		nullptr
+	);
+
+	POINT src = { 0, 0 };
+	POINT dst = { rc.left, rc.top };
+	SIZE size = { width, height };
+
+	BLENDFUNCTION blend{};
+	blend.BlendOp = AC_SRC_OVER;
+	blend.SourceConstantAlpha = 255;
+
+	UpdateLayeredWindow(
+		hAnimWnd,
+		nullptr,
+		&dst,
+		&size,
+		hdcMem,
+		&src,
+		0,
+		&blend,
+		ULW_ALPHA
+	);
+
+	::ShowWindow(hAnimWnd, SW_SHOW);
+	::ShowWindow(hwnd, SW_HIDE);
+
+	mIsAnimatingMinimize = true;
+	::ShowWindow(hwnd, SW_MINIMIZE);
+
+	int screenH = GetSystemMetrics(SM_CYSCREEN);
+
+	int duration = MinTrans.animation.durationMS;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	while (true)
+	{
+		auto now = std::chrono::high_resolution_clock::now();
+		float elapsed = std::chrono::duration<float, std::milli>(now - start).count();
+
+		float p = elapsed / duration;
+		if (p > 1.0f) p = 1.0f;
+
+		float e = 1.0f - pow(1.0f - p, 3);
+
+		int newX = rc.left;
+		int newY = rc.top;
+		int newW = width;
+		int newH = height;
+		newW = max(1, newW);
+		newH = max(1, newH);
+
+		if (MinTrans.slide)
+		{
+			switch (dir)
+			{
+			case WindowTransitionDirection::Bottom:
+			{
+				newH = (int)(height * (1.0f - e));
+				newY = rc.top + (height - newH);
+				break;
+			}
+
+			case WindowTransitionDirection::Top:
+			{
+				newH = (int)(height * (1.0f - e));
+				newY = rc.top;
+				break;
+			}
+
+			case WindowTransitionDirection::Right:
+			{
+				newW = (int)(width * (1.0f - e));
+				newX = rc.left + (width - newW);
+				break;
+			}
+
+			case WindowTransitionDirection::Left:
+			{
+				newW = (int)(width * (1.0f - e));
+				newX = rc.left;
+				break;
+			}
+
+			default:
+				break;
+			}
+		}
+
+		if (MinTrans.scale)
+		{
+			float s = (1.0f - e);
+
+			int scaledW = (int)(width * s);
+			int scaledH = (int)(height * s);
+			int centerX = rc.left + width / 2;
+			int centerY = rc.top + height / 2;
+
+			newX = centerX - scaledW / 2;
+			newY = centerY - scaledH / 2;
+			newW = scaledW;
+			newH = scaledH;
+		}
+
+		BYTE alpha = 255;
+		if (MinTrans.fade)
+			alpha = (BYTE)(255 * (1.0f - p));
+
+		SIZE newSize = { newW, newH };
+		POINT newDst = { newX, newY };
+
+		BLENDFUNCTION b = blend;
+		b.SourceConstantAlpha = alpha;
+
+		HDC hdcScaled = CreateCompatibleDC(hdcWin);
+		HBITMAP bmpScaled = CreateCompatibleBitmap(hdcWin, newW, newH);
+		SelectObject(hdcScaled, bmpScaled);
+		StretchBlt(
+			hdcScaled,
+			0,
+			0,
+			newW,
+			newH,
+			hdcMem,
+			0,
+			0,
+			width,
+			height,
+			SRCCOPY
+		);
+
+		UpdateLayeredWindow(
+			hAnimWnd,
+			nullptr,
+			&newDst,
+			&newSize,
+			hdcScaled,
+			&src,
+			0,
+			&b,
+			ULW_ALPHA
+		);
+
+		if (p >= 1.0f) {
+			DeleteObject(bmpScaled);
+			DeleteDC(hdcScaled);
+			break;
+		}
+
+		Sleep(8);
+	}
+
+	DestroyWindow(hAnimWnd);
+	DeleteObject(bmp);
+	DeleteDC(hdcMem);
+
+	ReleaseDC(hwnd, hdcWin);
+
 }

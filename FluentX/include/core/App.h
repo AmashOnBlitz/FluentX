@@ -34,6 +34,8 @@ namespace NAMESPACE_FLUENTX {
 
         void CheckMenuRebuilds();
 
+        void EnableDebugCout(bool enable);
+        bool GetDebugCoutEnabled();
     private:
         App() = default;
         ~App() = default;
@@ -47,6 +49,7 @@ namespace NAMESPACE_FLUENTX {
         bool isEHStarted = false;
         OnUpdateFunc mOnUpdate;
         std::mutex mUpdateMutex;
+        bool isDebugCoutEnabled = false;
     };
 
 }

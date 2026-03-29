@@ -19,8 +19,9 @@ namespace NAMESPACE_FLUENTX {
 			int height,
 			int xPos,
 			int yPos,
+			MainWindow* parent = nullptr,
 			MainWindowStyle style = MainWindowStylePresets::DefaultWindow,
-			MainWindow* parent = nullptr
+			MainWindowTransitionSet transitions = MainWindowTransitionSet{}
 		);
 
 		LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -29,13 +30,21 @@ namespace NAMESPACE_FLUENTX {
 		void UseMenuBar(bool use);
 		bool IsUsingMenuBar();
 		MenuBar* getMenuBar();
+
 		void OnKeyDown(OnWndKeyDown func);
 		void OnKeyUp(OnWndKeyUp func);
+
+		void setMainWndTransSet(MainWindowTransitionSet set);
+		MainWindowTransitionSet& getMainWndTransSet();
+
 	private: //Funcs
 		HMENU BuildMenu(Menu* menu, int& iMenuID);
+		void OnMinimizeRequested();
+
 	private: //Vars
 		bool mMenuBarSet = false;
 		bool mUseMenuBar = true;
+		bool mIsAnimatingMinimize = false;
 		MenuBar* mMenuBar = nullptr;
 		std::wstring mWindowName = L"";
 		std::wstring mClassName = L""; 
@@ -43,6 +52,7 @@ namespace NAMESPACE_FLUENTX {
 		OnWndKeyDown mOnKeyDown;
 		OnWndKeyUp mOnKeyUp;
 		char mLastChar = 0;
+		MainWindowTransitionSet mMainWndTransSet{};
 	};
 
 }

@@ -203,19 +203,19 @@ namespace NAMESPACE_FLUENTX {
         Right
     };
 
-    struct WindowTransition {
+    struct MainWindowTransition {
     public:
-        WindowTransitionDirection direction = WindowTransitionDirection::None;
+        WindowTransitionDirection direction = WindowTransitionDirection::Bottom;
         int durationMS = 200;
     };
 
-    struct WindowStyleTransition { // base ---
+    struct MainWindowStyleTransition { // base ---
     public:
         bool enabled = false;
-        WindowTransition animation;
+        MainWindowTransition animation;
     };
 
-    struct WindowMinimizeTransition : public WindowStyleTransition
+    struct MainWindowMinimizeTransition : public MainWindowStyleTransition
     {
     public:
         bool slide = true;
@@ -223,7 +223,7 @@ namespace NAMESPACE_FLUENTX {
         bool fade = true;
     };
 
-    struct WindowRestoreTransition : public WindowStyleTransition
+    struct MainWindowRestoreTransition : public MainWindowStyleTransition
     {
     public:
         bool slide = true;
@@ -235,11 +235,10 @@ namespace NAMESPACE_FLUENTX {
     //{
     //};
 
-    struct WindowTransitionSet {
+    struct MainWindowTransitionSet {
     public:
-        WindowMinimizeTransition minimize{};
-        //WindowMaximizeTransition maximize{};
-        WindowRestoreTransition restore{};
+        MainWindowMinimizeTransition minimize{};
+        MainWindowRestoreTransition restore{};
     };
 
 }

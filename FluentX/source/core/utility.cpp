@@ -1,5 +1,6 @@
 #include "core/pch.h"
 #include "core/utility.h"
+#include "core/App.h"
 
 std::string WStringToString(const std::wstring& wstr)
 {
@@ -56,4 +57,11 @@ std::string GetLocalAppDataPath()
     }
 
     return ".\\";
+}
+
+void DebugCoutLog(std::string msg)
+{
+    if (NAMESPACE_FLUENTX::App::Instance().GetDebugCoutEnabled()) {
+        std::cout << msg << std::endl;
+    }
 }

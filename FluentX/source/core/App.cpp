@@ -174,3 +174,13 @@ void NAMESPACE_FLUENTX::App::CheckMenuRebuilds()
 	}
 }
 
+void NAMESPACE_FLUENTX::App::EnableDebugCout(bool enable)
+{
+	this->isDebugCoutEnabled = enable;
+}
+
+bool NAMESPACE_FLUENTX::App::GetDebugCoutEnabled()
+{
+	return this->isDebugCoutEnabled;
+}
+
