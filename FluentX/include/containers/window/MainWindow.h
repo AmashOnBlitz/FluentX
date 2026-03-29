@@ -4,7 +4,8 @@
 #include "MainWindowStyle.h"
 #include <string>
 #include "containers/Menu/MenuBar.h"
-#include "KeyEvents.h"
+#include "core/KeyEvents.h"
+#include <core/MouseEvents.h>
 
 namespace NAMESPACE_FLUENTX {
 
@@ -34,6 +35,8 @@ namespace NAMESPACE_FLUENTX {
         void OnKeyDown(OnWndKeyDown func);
         void OnKeyUp(OnWndKeyUp func);
 
+        void OnMouseEvent(std::function<void(MouseEvent&)> fn);
+
         void setMainWndTransSet(MainWindowTransitionSet set);
         MainWindowTransitionSet& getMainWndTransSet();
 
@@ -41,6 +44,15 @@ namespace NAMESPACE_FLUENTX {
         HMENU BuildMenu(Menu* menu, int& iMenuID);
         void OnMinimizeRequested();
         void OnRestoreRequested();
+        void DispatchMouseEvent(
+            HWND hwnd,
+            MouseEventType type,
+            MouseButton btn,
+            WPARAM wParam,
+            LPARAM lParam,
+            int delta = 0,
+            bool screenCoords = false
+        );
 
     private: //Vars
         bool mMenuBarSet = false;
@@ -52,6 +64,7 @@ namespace NAMESPACE_FLUENTX {
         std::vector<MenuItem*> AllVectMenuItems;
         OnWndKeyDown mOnKeyDown;
         OnWndKeyUp mOnKeyUp;
+        mOnWndMouseEvent mOnMouseEvent;
         char mLastChar = 0;
         MainWindowTransitionSet mMainWndTransSet{};
         RECT mRestoreRect{};

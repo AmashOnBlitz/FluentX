@@ -5,6 +5,7 @@
 #include "core/macroFuncs.h"
 #include "core/utility.h"
 #include "Windows.h"
+#include <windowsx.h>
 #include "tchar.h"
 
 NAMESPACE_FLUENTX::MainWindow::MainWindow()
@@ -195,7 +196,7 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			e.shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 			e.alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
 
-			e.state = KeyEventState::NotHandled;
+			e.handled = false;
 			mOnKeyDown(e);
 		}
 		break;
@@ -225,7 +226,7 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 			default:
 				return 0;
 			}
-			e.state = KeyEventState::NotHandled;
+			e.handled = false;
 			mOnKeyDown(e);
 		}
 		break;
@@ -276,12 +277,78 @@ LRESULT NAMESPACE_FLUENTX::MainWindow::fnWndProc(HWND hwnd, UINT msg, WPARAM wPa
 				}
 			}
 
-			e.state = KeyEventState::NotHandled;
+			e.handled = false;
 			mOnKeyUp(e);
 		}
 		break;
 	}
+	case WM_MOUSEMOVE:
+		DispatchMouseEvent(hwnd, MouseEventType::Move, MouseButton::None, wParam, lParam);
+		break;
 
+	case WM_LBUTTONDOWN:
+		DispatchMouseEvent(hwnd, MouseEventType::Down, MouseButton::Left, wParam, lParam);
+		break;
+
+	case WM_LBUTTONUP:
+		DispatchMouseEvent(hwnd, MouseEventType::Up, MouseButton::Left, wParam, lParam);
+		break;
+
+	case WM_LBUTTONDBLCLK:
+		DispatchMouseEvent(hwnd, MouseEventType::DoubleClick, MouseButton::Left, wParam, lParam);
+		break;
+
+	case WM_RBUTTONDOWN:
+		DispatchMouseEvent(hwnd, MouseEventType::Down, MouseButton::Right, wParam, lParam);
+		break;
+
+	case WM_RBUTTONUP:
+		DispatchMouseEvent(hwnd, MouseEventType::Up, MouseButton::Right, wParam, lParam);
+		break;
+
+	case WM_RBUTTONDBLCLK:
+		DispatchMouseEvent(hwnd, MouseEventType::DoubleClick, MouseButton::Right, wParam, lParam);
+		break;
+
+	case WM_MBUTTONDOWN:
+		DispatchMouseEvent(hwnd, MouseEventType::Down, MouseButton::Middle, wParam, lParam);
+		break;
+
+	case WM_MBUTTONUP:
+		DispatchMouseEvent(hwnd, MouseEventType::Up, MouseButton::Middle, wParam, lParam);
+		break;
+
+	case WM_MBUTTONDBLCLK:
+		DispatchMouseEvent(hwnd, MouseEventType::DoubleClick, MouseButton::Middle, wParam, lParam);
+		break;
+
+	case WM_XBUTTONDOWN:
+		DispatchMouseEvent(hwnd, MouseEventType::Down,
+						   GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseButton::X1 : MouseButton::X2,
+						   wParam, lParam);
+		break;
+
+	case WM_XBUTTONUP:
+		DispatchMouseEvent(hwnd, MouseEventType::Up,
+						   GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseButton::X1 : MouseButton::X2,
+						   wParam, lParam);
+		break;
+
+	case WM_XBUTTONDBLCLK:
+		DispatchMouseEvent(hwnd, MouseEventType::DoubleClick,
+						   GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseButton::X1 : MouseButton::X2,
+						   wParam, lParam);
+		break;
+
+	case WM_MOUSEWHEEL:
+		DispatchMouseEvent(hwnd, MouseEventType::Scroll, MouseButton::None, wParam, lParam,
+						   GET_WHEEL_DELTA_WPARAM(wParam), true);
+		break;
+
+	case WM_MOUSEHWHEEL:
+		DispatchMouseEvent(hwnd, MouseEventType::HScroll, MouseButton::None, wParam, lParam,
+						   GET_WHEEL_DELTA_WPARAM(wParam), true);
+		break;
 	case WM_DESTROY:
 		this->mOnClose(WStringToString(mWindowName));
 		break;
@@ -325,6 +392,11 @@ void NAMESPACE_FLUENTX::MainWindow::OnKeyDown(OnWndKeyDown func)
 void NAMESPACE_FLUENTX::MainWindow::OnKeyUp(OnWndKeyUp func)
 {
 	this->mOnKeyUp = func;
+}
+
+void NAMESPACE_FLUENTX::MainWindow::OnMouseEvent(std::function<void(MouseEvent&)> fn)
+{
+	mOnMouseEvent = fn;
 }
 
 void NAMESPACE_FLUENTX::MainWindow::setMainWndTransSet(MainWindowTransitionSet set)
@@ -636,4 +708,35 @@ void NAMESPACE_FLUENTX::MainWindow::OnRestoreRequested()
 	DeleteObject(bmp);
 	DeleteDC(hdcMem);
 	ReleaseDC(hwnd, hdcWin);
+}
+
+void NAMESPACE_FLUENTX::MainWindow::DispatchMouseEvent(
+	HWND hwnd,
+	MouseEventType type,
+	MouseButton btn,
+	WPARAM wParam,
+	LPARAM lParam,
+	int delta,
+	bool screenCoords
+)
+{
+	if (!mOnMouseEvent) return;
+	MouseEvent e{};
+	e.type = type;
+	e.button = btn;
+	e.delta = delta;
+	e.handled = false;
+	if (screenCoords)
+	{
+		POINT pt{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		ScreenToClient(hwnd, &pt);
+		e.x = pt.x;
+		e.y = pt.y;
+	}
+	else
+	{
+		e.x = GET_X_LPARAM(lParam);
+		e.y = GET_Y_LPARAM(lParam);
+	}
+	mOnMouseEvent(e);
 }
